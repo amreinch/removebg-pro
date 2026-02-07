@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RemoveBG Pro - AI Background Remover</title>
+    <meta name="description" content="Remove image backgrounds in seconds with AI. Perfect for e-commerce, social media, and professional photos.">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1>🎨 RemoveBG Pro</h1>
+                <p class="tagline">AI-Powered Background Removal</p>
+            </div>
+            <nav>
+                <a href="#features">Features</a>
+                <a href="#pricing">Pricing</a>
+                <a href="#" class="btn btn-primary">Sign Up Free</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <h2>Remove Image Backgrounds in Seconds</h2>
+            <p class="subtitle">Professional quality results powered by AI. No Photoshop skills required.</p>
+            
+            <!-- Upload Area -->
+            <div class="upload-container">
+                <div id="drop-zone" class="drop-zone">
+                    <div class="upload-icon">📸</div>
+                    <h3>Drag & Drop Your Image Here</h3>
+                    <p>or click to browse</p>
+                    <input type="file" id="file-input" accept="image/*" hidden>
+                    <button class="btn btn-large" onclick="document.getElementById('file-input').click()">
+                        Choose Image
+                    </button>
+                    <p class="file-info">Supports JPG, PNG, WebP • Max 10MB</p>
+                </div>
+
+                <!-- Processing State -->
+                <div id="processing" class="processing" style="display:none;">
+                    <div class="spinner"></div>
+                    <h3>Removing Background...</h3>
+                    <p>This usually takes 2-5 seconds</p>
+                </div>
+
+                <!-- Result Display -->
+                <div id="result" class="result" style="display:none;">
+                    <div class="comparison">
+                        <div class="image-box">
+                            <h4>Original</h4>
+                            <img id="original-image" src="" alt="Original">
+                            <p class="image-size" id="original-size"></p>
+                        </div>
+                        <div class="arrow">→</div>
+                        <div class="image-box">
+                            <h4>Background Removed</h4>
+                            <img id="result-image" src="" alt="Result">
+                            <p class="image-size" id="result-size"></p>
+                        </div>
+                    </div>
+                    
+                    <div class="actions">
+                        <button class="btn btn-success" id="download-btn">
+                            ⬇ Download Image
+                        </button>
+                        <button class="btn btn-secondary" onclick="resetUpload()">
+                            🔄 Process Another Image
+                        </button>
+                    </div>
+                    
+                    <div class="upgrade-prompt">
+                        <p>🎉 <strong>2 free images remaining this month</strong></p>
+                        <p>Want unlimited? <a href="#pricing">Upgrade to Pro</a> for just $5/month</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features -->
+    <section id="features" class="features">
+        <div class="container">
+            <h2>Why Choose RemoveBG Pro?</h2>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🤖</div>
+                    <h3>AI-Powered</h3>
+                    <p>Advanced AI recognizes subjects and removes backgrounds with precision</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <h3>Lightning Fast</h3>
+                    <p>Get results in 2-5 seconds, not minutes of manual work</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">💎</div>
+                    <h3>High Quality</h3>
+                    <p>Original resolution preserved with clean edges</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎯</div>
+                    <h3>Simple to Use</h3>
+                    <p>Drag, drop, download. No learning curve required</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📦</div>
+                    <h3>Batch Processing</h3>
+                    <p>Process multiple images at once (Pro plan)</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔌</div>
+                    <h3>API Access</h3>
+                    <p>Integrate into your workflow with our API (Pro plan)</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing -->
+    <section id="pricing" class="pricing">
+        <div class="container">
+            <h2>Simple, Transparent Pricing</h2>
+            <p class="subtitle">Start free, upgrade when you need more</p>
+            
+            <div class="pricing-grid">
+                <div class="pricing-card">
+                    <h3>Free</h3>
+                    <div class="price">$0<span>/month</span></div>
+                    <ul>
+                        <li>✓ 3 images per month</li>
+                        <li>✓ High quality results</li>
+                        <li>✓ PNG export</li>
+                        <li>✗ Small watermark</li>
+                        <li>✗ API access</li>
+                    </ul>
+                    <button class="btn btn-outline">Get Started</button>
+                </div>
+
+                <div class="pricing-card featured">
+                    <div class="badge">Most Popular</div>
+                    <h3>Basic</h3>
+                    <div class="price">$5<span>/month</span></div>
+                    <ul>
+                        <li>✓ 50 images per month</li>
+                        <li>✓ High quality results</li>
+                        <li>✓ No watermark</li>
+                        <li>✓ All export formats</li>
+                        <li>✓ Priority processing</li>
+                    </ul>
+                    <button class="btn btn-primary">Start Basic</button>
+                </div>
+
+                <div class="pricing-card">
+                    <h3>Pro</h3>
+                    <div class="price">$15<span>/month</span></div>
+                    <ul>
+                        <li>✓ 500 images per month</li>
+                        <li>✓ Highest quality</li>
+                        <li>✓ Batch processing</li>
+                        <li>✓ API access</li>
+                        <li>✓ Commercial license</li>
+                    </ul>
+                    <button class="btn btn-outline">Start Pro</button>
+                </div>
+
+                <div class="pricing-card">
+                    <h3>Business</h3>
+                    <div class="price">$50<span>/month</span></div>
+                    <ul>
+                        <li>✓ 5,000 images per month</li>
+                        <li>✓ Everything in Pro</li>
+                        <li>✓ Priority support</li>
+                        <li>✓ Custom integrations</li>
+                        <li>✓ Volume discounts</li>
+                    </ul>
+                    <button class="btn btn-outline">Contact Sales</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div>
+                    <h4>RemoveBG Pro</h4>
+                    <p>Professional background removal for everyone</p>
+                </div>
+                <div>
+                    <h4>Product</h4>
+                    <a href="#features">Features</a>
+                    <a href="#pricing">Pricing</a>
+                    <a href="/docs">API Docs</a>
+                </div>
+                <div>
+                    <h4>Company</h4>
+                    <a href="#">About</a>
+                    <a href="#">Blog</a>
+                    <a href="#">Contact</a>
+                </div>
+                <div>
+                    <h4>Legal</h4>
+                    <a href="#">Terms</a>
+                    <a href="#">Privacy</a>
+                    <a href="#">Refunds</a>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 RemoveBG Pro. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
