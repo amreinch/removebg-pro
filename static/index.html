@@ -4,220 +4,516 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RemoveBG Pro - AI Background Remover</title>
-    <meta name="description" content="Remove image backgrounds in seconds with AI. Perfect for e-commerce, social media, and professional photos.">
-    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 900px;
+            width: 100%;
+            padding: 40px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+        
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 60px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 30px;
+        }
+        
+        .upload-area:hover {
+            border-color: #764ba2;
+            background: #f8f9ff;
+        }
+        
+        .upload-area.dragover {
+            background: #f0f4ff;
+            border-color: #764ba2;
+        }
+        
+        .upload-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+        
+        .upload-area h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .upload-area p {
+            color: #666;
+        }
+        
+        #fileInput {
+            display: none;
+        }
+        
+        .format-selector {
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .format-selector label {
+            color: #333;
+            font-weight: 600;
+            margin-right: 15px;
+        }
+        
+        .format-btn {
+            padding: 10px 25px;
+            margin: 0 5px;
+            border: 2px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .format-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+        
+        .format-btn.active {
+            background: #667eea;
+            color: white;
+        }
+        
+        .process-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 30px;
+        }
+        
+        .process-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .process-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 30px;
+            display: none;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .results {
+            display: none;
+            margin-top: 30px;
+        }
+        
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .image-box {
+            text-align: center;
+        }
+        
+        .image-box h4 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .image-box img {
+            max-width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .download-btn {
+            width: 100%;
+            padding: 15px;
+            background: #10b981;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 10px;
+        }
+        
+        .download-btn:hover {
+            background: #059669;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(16, 185, 129, 0.4);
+        }
+        
+        .reset-btn {
+            width: 100%;
+            padding: 15px;
+            background: #6b7280;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .reset-btn:hover {
+            background: #4b5563;
+            transform: translateY(-2px);
+        }
+        
+        .stats {
+            background: #f9fafb;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-around;
+            text-align: center;
+        }
+        
+        .stat {
+            color: #666;
+        }
+        
+        .stat strong {
+            display: block;
+            color: #333;
+            font-size: 1.2em;
+            margin-bottom: 5px;
+        }
+        
+        .error {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            .comparison {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .container {
+                padding: 20px;
+            }
+        }
+    </style>
 </head>
 <body>
-    <!-- Header -->
-    <header>
-        <div class="container">
-            <div class="logo">
-                <h1>🎨 RemoveBG Pro</h1>
-                <p class="tagline">AI-Powered Background Removal</p>
-            </div>
-            <nav>
-                <a href="#features">Features</a>
-                <a href="#pricing">Pricing</a>
-                <a href="#" class="btn btn-primary">Sign Up Free</a>
-            </nav>
+    <div class="container">
+        <div class="header">
+            <h1>🎨 RemoveBG Pro</h1>
+            <p>AI-Powered Background Removal in Seconds</p>
         </div>
-    </header>
-
-    <!-- Hero Section -->
-    <section class="hero">
-        <div class="container">
-            <h2>Remove Image Backgrounds in Seconds</h2>
-            <p class="subtitle">Professional quality results powered by AI. No Photoshop skills required.</p>
+        
+        <div class="error" id="errorBox"></div>
+        
+        <div class="upload-section" id="uploadSection">
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">📸</div>
+                <h3>Drop your image here</h3>
+                <p>or click to browse (JPG, PNG, WebP - max 10MB)</p>
+                <input type="file" id="fileInput" accept="image/jpeg,image/jpg,image/png,image/webp">
+            </div>
             
-            <!-- Upload Area -->
-            <div class="upload-container">
-                <div id="drop-zone" class="drop-zone">
-                    <div class="upload-icon">📸</div>
-                    <h3>Drag & Drop Your Image Here</h3>
-                    <p>or click to browse</p>
-                    <input type="file" id="file-input" accept="image/*" hidden>
-                    <button class="btn btn-large" onclick="document.getElementById('file-input').click()">
-                        Choose Image
-                    </button>
-                    <p class="file-info">Supports JPG, PNG, WebP • Max 10MB</p>
-                </div>
-
-                <!-- Processing State -->
-                <div id="processing" class="processing" style="display:none;">
-                    <div class="spinner"></div>
-                    <h3>Removing Background...</h3>
-                    <p>This usually takes 2-5 seconds</p>
-                </div>
-
-                <!-- Result Display -->
-                <div id="result" class="result" style="display:none;">
-                    <div class="comparison">
-                        <div class="image-box">
-                            <h4>Original</h4>
-                            <img id="original-image" src="" alt="Original">
-                            <p class="image-size" id="original-size"></p>
-                        </div>
-                        <div class="arrow">→</div>
-                        <div class="image-box">
-                            <h4>Background Removed</h4>
-                            <img id="result-image" src="" alt="Result">
-                            <p class="image-size" id="result-size"></p>
-                        </div>
-                    </div>
-                    
-                    <div class="actions">
-                        <button class="btn btn-success" id="download-btn">
-                            ⬇ Download Image
-                        </button>
-                        <button class="btn btn-secondary" onclick="resetUpload()">
-                            🔄 Process Another Image
-                        </button>
-                    </div>
-                    
-                    <div class="upgrade-prompt">
-                        <p>🎉 <strong>2 free images remaining this month</strong></p>
-                        <p>Want unlimited? <a href="#pricing">Upgrade to Pro</a> for just $5/month</p>
-                    </div>
-                </div>
+            <div class="format-selector">
+                <label>Output Format:</label>
+                <button class="format-btn active" data-format="png">PNG</button>
+                <button class="format-btn" data-format="jpg">JPG</button>
+                <button class="format-btn" data-format="webp">WebP</button>
             </div>
-        </div>
-    </section>
-
-    <!-- Features -->
-    <section id="features" class="features">
-        <div class="container">
-            <h2>Why Choose RemoveBG Pro?</h2>
-            <div class="feature-grid">
-                <div class="feature-card">
-                    <div class="feature-icon">🤖</div>
-                    <h3>AI-Powered</h3>
-                    <p>Advanced AI recognizes subjects and removes backgrounds with precision</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">⚡</div>
-                    <h3>Lightning Fast</h3>
-                    <p>Get results in 2-5 seconds, not minutes of manual work</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">💎</div>
-                    <h3>High Quality</h3>
-                    <p>Original resolution preserved with clean edges</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">🎯</div>
-                    <h3>Simple to Use</h3>
-                    <p>Drag, drop, download. No learning curve required</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">📦</div>
-                    <h3>Batch Processing</h3>
-                    <p>Process multiple images at once (Pro plan)</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">🔌</div>
-                    <h3>API Access</h3>
-                    <p>Integrate into your workflow with our API (Pro plan)</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Pricing -->
-    <section id="pricing" class="pricing">
-        <div class="container">
-            <h2>Simple, Transparent Pricing</h2>
-            <p class="subtitle">Start free, upgrade when you need more</p>
             
-            <div class="pricing-grid">
-                <div class="pricing-card">
-                    <h3>Free</h3>
-                    <div class="price">$0<span>/month</span></div>
-                    <ul>
-                        <li>✓ 3 images per month</li>
-                        <li>✓ High quality results</li>
-                        <li>✓ PNG export</li>
-                        <li>✗ Small watermark</li>
-                        <li>✗ API access</li>
-                    </ul>
-                    <button class="btn btn-outline">Get Started</button>
-                </div>
-
-                <div class="pricing-card featured">
-                    <div class="badge">Most Popular</div>
-                    <h3>Basic</h3>
-                    <div class="price">$5<span>/month</span></div>
-                    <ul>
-                        <li>✓ 50 images per month</li>
-                        <li>✓ High quality results</li>
-                        <li>✓ No watermark</li>
-                        <li>✓ All export formats</li>
-                        <li>✓ Priority processing</li>
-                    </ul>
-                    <button class="btn btn-primary">Start Basic</button>
-                </div>
-
-                <div class="pricing-card">
-                    <h3>Pro</h3>
-                    <div class="price">$15<span>/month</span></div>
-                    <ul>
-                        <li>✓ 500 images per month</li>
-                        <li>✓ Highest quality</li>
-                        <li>✓ Batch processing</li>
-                        <li>✓ API access</li>
-                        <li>✓ Commercial license</li>
-                    </ul>
-                    <button class="btn btn-outline">Start Pro</button>
-                </div>
-
-                <div class="pricing-card">
-                    <h3>Business</h3>
-                    <div class="price">$50<span>/month</span></div>
-                    <ul>
-                        <li>✓ 5,000 images per month</li>
-                        <li>✓ Everything in Pro</li>
-                        <li>✓ Priority support</li>
-                        <li>✓ Custom integrations</li>
-                        <li>✓ Volume discounts</li>
-                    </ul>
-                    <button class="btn btn-outline">Contact Sales</button>
-                </div>
-            </div>
+            <button class="process-btn" id="processBtn" disabled>Remove Background</button>
         </div>
-    </section>
-
-    <!-- Footer -->
-    <footer>
-        <div class="container">
-            <div class="footer-content">
-                <div>
-                    <h4>RemoveBG Pro</h4>
-                    <p>Professional background removal for everyone</p>
-                </div>
-                <div>
-                    <h4>Product</h4>
-                    <a href="#features">Features</a>
-                    <a href="#pricing">Pricing</a>
-                    <a href="/docs">API Docs</a>
-                </div>
-                <div>
-                    <h4>Company</h4>
-                    <a href="#">About</a>
-                    <a href="#">Blog</a>
-                    <a href="#">Contact</a>
-                </div>
-                <div>
-                    <h4>Legal</h4>
-                    <a href="#">Terms</a>
-                    <a href="#">Privacy</a>
-                    <a href="#">Refunds</a>
-                </div>
-            </div>
-            <div class="footer-bottom">
-                <p>&copy; 2026 RemoveBG Pro. All rights reserved.</p>
-            </div>
+        
+        <div class="loading" id="loadingSection">
+            <div class="spinner"></div>
+            <h3>Processing your image...</h3>
+            <p>This may take a few seconds</p>
         </div>
-    </footer>
-
-    <script src="/static/js/app.js"></script>
+        
+        <div class="results" id="resultsSection">
+            <div class="stats">
+                <div class="stat">
+                    <strong id="originalSize">-</strong>
+                    <span>Original Size</span>
+                </div>
+                <div class="stat">
+                    <strong id="processedSize">-</strong>
+                    <span>Processed Size</span>
+                </div>
+                <div class="stat">
+                    <strong id="processingTime">-</strong>
+                    <span>Processing Time</span>
+                </div>
+            </div>
+            
+            <div class="comparison">
+                <div class="image-box">
+                    <h4>Original</h4>
+                    <img id="originalImage" alt="Original">
+                </div>
+                <div class="image-box">
+                    <h4>Background Removed</h4>
+                    <img id="processedImage" alt="Processed">
+                </div>
+            </div>
+            
+            <button class="download-btn" id="downloadBtn">Download Image</button>
+            <button class="reset-btn" id="resetBtn">Process Another Image</button>
+        </div>
+    </div>
+    
+    <script>
+        let selectedFile = null;
+        let selectedFormat = 'png';
+        let downloadUrl = null;
+        let startTime = null;
+        
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const processBtn = document.getElementById('processBtn');
+        const uploadSection = document.getElementById('uploadSection');
+        const loadingSection = document.getElementById('loadingSection');
+        const resultsSection = document.getElementById('resultsSection');
+        const errorBox = document.getElementById('errorBox');
+        const formatBtns = document.querySelectorAll('.format-btn');
+        
+        // Upload area click
+        uploadArea.addEventListener('click', () => fileInput.click());
+        
+        // File input change
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+        
+        // Drag and drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            
+            if (e.dataTransfer.files.length > 0) {
+                handleFile(e.dataTransfer.files[0]);
+            }
+        });
+        
+        // Format selection
+        formatBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                formatBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                selectedFormat = btn.dataset.format;
+            });
+        });
+        
+        // Process button
+        processBtn.addEventListener('click', processImage);
+        
+        // Download button
+        document.getElementById('downloadBtn').addEventListener('click', () => {
+            if (downloadUrl) {
+                const a = document.createElement('a');
+                a.href = downloadUrl;
+                a.download = `removebg-${Date.now()}.${selectedFormat}`;
+                a.click();
+            }
+        });
+        
+        // Reset button
+        document.getElementById('resetBtn').addEventListener('click', reset);
+        
+        function handleFile(file) {
+            // Validate file type
+            const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+            if (!validTypes.includes(file.type)) {
+                showError('Invalid file type. Please upload JPG, PNG, or WebP.');
+                return;
+            }
+            
+            // Validate file size (10MB)
+            if (file.size > 10 * 1024 * 1024) {
+                showError('File too large. Maximum size is 10MB.');
+                return;
+            }
+            
+            selectedFile = file;
+            processBtn.disabled = false;
+            uploadArea.querySelector('h3').textContent = file.name;
+            uploadArea.querySelector('p').textContent = `${(file.size / 1024).toFixed(0)} KB - Ready to process`;
+            hideError();
+        }
+        
+        async function processImage() {
+            if (!selectedFile) return;
+            
+            // Show loading
+            uploadSection.style.display = 'none';
+            loadingSection.style.display = 'block';
+            resultsSection.style.display = 'none';
+            
+            startTime = Date.now();
+            
+            try {
+                const formData = new FormData();
+                formData.append('file', selectedFile);
+                formData.append('format', selectedFormat);
+                
+                const response = await fetch('/api/remove-background', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Processing failed');
+                }
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    displayResults(result);
+                } else {
+                    throw new Error('Processing failed');
+                }
+                
+            } catch (error) {
+                showError('Failed to process image. Please try again.');
+                uploadSection.style.display = 'block';
+                loadingSection.style.display = 'none';
+            }
+        }
+        
+        function displayResults(result) {
+            const processingTime = ((Date.now() - startTime) / 1000).toFixed(1);
+            
+            // Update stats
+            document.getElementById('originalSize').textContent = formatBytes(result.original_size);
+            document.getElementById('processedSize').textContent = formatBytes(result.output_size);
+            document.getElementById('processingTime').textContent = `${processingTime}s`;
+            
+            // Display images
+            const originalImage = document.getElementById('originalImage');
+            originalImage.src = URL.createObjectURL(selectedFile);
+            
+            const processedImage = document.getElementById('processedImage');
+            processedImage.src = result.output_url;
+            
+            downloadUrl = result.download_url;
+            
+            // Show results
+            loadingSection.style.display = 'none';
+            resultsSection.style.display = 'block';
+        }
+        
+        function reset() {
+            selectedFile = null;
+            processBtn.disabled = true;
+            uploadArea.querySelector('h3').textContent = 'Drop your image here';
+            uploadArea.querySelector('p').textContent = 'or click to browse (JPG, PNG, WebP - max 10MB)';
+            fileInput.value = '';
+            
+            uploadSection.style.display = 'block';
+            resultsSection.style.display = 'none';
+        }
+        
+        function showError(message) {
+            errorBox.textContent = message;
+            errorBox.style.display = 'block';
+        }
+        
+        function hideError() {
+            errorBox.style.display = 'none';
+        }
+        
+        function formatBytes(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+    </script>
 </body>
 </html>
