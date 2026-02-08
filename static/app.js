@@ -262,12 +262,8 @@ function handleFile(file) {
 async function processImage() {
     if (!selectedFile || !currentUser) return;
     
-    // Check credits
-    if (currentUser.credits_remaining === 0) {
-        showError('No credits remaining. Please upgrade your plan.');
-        showPricing();
-        return;
-    }
+    // Preview is FREE! No credit check here.
+    // Credits are only checked/deducted on download.
     
     // Show loading
     document.getElementById('uploadSection').style.display = 'none';
@@ -316,12 +312,8 @@ function displayResults(result) {
     document.getElementById('originalImage').src = URL.createObjectURL(selectedFile);
     document.getElementById('processedImage').src = result.output_url;
     
-    // Show watermark notice if applicable
-    if (result.has_watermark) {
-        document.getElementById('watermarkNotice').style.display = 'block';
-    } else {
-        document.getElementById('watermarkNotice').style.display = 'none';
-    }
+    // Preview is always watermarked (free)
+    // Watermark notice is always shown in HTML
     
     // Store download URL
     downloadUrl = result.download_url;
@@ -329,6 +321,13 @@ function displayResults(result) {
 
 function downloadImage() {
     if (!downloadUrl) return;
+    
+    // Check if user has credits for download
+    if (currentUser.credits_remaining === 0) {
+        showError('No download credits remaining. Upgrade to download clean images without watermark!');
+        showPricing();
+        return;
+    }
     
     const token = localStorage.getItem('token');
     
@@ -341,15 +340,23 @@ function downloadImage() {
     fetch(`${API_BASE}${downloadUrl}`, {
         headers: { 'Authorization': `Bearer ${token}` }
     })
-    .then(response => response.blob())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Download failed');
+        }
+        return response.blob();
+    })
     .then(blob => {
         const url = URL.createObjectURL(blob);
         a.href = url;
         a.click();
         URL.revokeObjectURL(url);
+        
+        // Refresh user data to update credits
+        fetchUserProfile();
     })
     .catch(error => {
-        showError('Download failed. Please try again.');
+        showError('Download failed. You may be out of credits.');
     });
 }
 

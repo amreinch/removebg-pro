@@ -1,6 +1,10 @@
 """
 RemoveBG Pro - AI Background Remover Service with Monetization
 Main application file
+
+NEW PRICING MODEL:
+- Preview: Always FREE and watermarked (unlimited)
+- Download: Costs 1 credit per download (clean version, no watermark)
 """
 from fastapi import FastAPI, File, UploadFile, HTTPException, Depends, Form
 from fastapi.staticfiles import StaticFiles
@@ -53,12 +57,12 @@ STRIPE_PRICE_IDS = {
     "business": os.getenv("STRIPE_PRICE_BUSINESS", "price_business"),
 }
 
-# Tier configurations
+# Tier configurations - Monthly DOWNLOAD limits
 TIER_CONFIG = {
-    "free": {"credits": 3, "watermark": True},
-    "basic": {"credits": 50, "watermark": False},
-    "pro": {"credits": 500, "watermark": False},
-    "business": {"credits": 5000, "watermark": False},
+    "free": {"downloads": 3},
+    "basic": {"downloads": 50},
+    "pro": {"downloads": 500},
+    "business": {"downloads": 5000},
 }
 
 # Create directories
@@ -171,7 +175,7 @@ async def get_me(current_user: User = Depends(get_current_user)):
 
 
 # ============================================================================
-# IMAGE PROCESSING ENDPOINT (with auth and credits)
+# IMAGE PROCESSING ENDPOINTS
 # ============================================================================
 
 @app.post("/api/remove-background", response_model=ProcessImageResponse)
@@ -182,11 +186,11 @@ async def remove_background(
     db: Session = Depends(get_db)
 ):
     """
-    Remove background from uploaded image (authenticated users only)
-    """
-    # Check credits
-    check_user_credits(current_user)
+    Remove background from uploaded image - Returns PREVIEW (watermarked, FREE!)
     
+    This endpoint is FREE and always returns a watermarked preview.
+    Use /api/download/{file_id} to get the clean version (costs 1 credit).
+    """
     # Validate file type
     allowed_types = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
     if file.content_type not in allowed_types:
@@ -215,40 +219,45 @@ async def remove_background(
         input_image = Image.open(io.BytesIO(contents))
         output_image = remove(input_image)
         
-        # Apply watermark for free users
-        tier_config = TIER_CONFIG.get(current_user.subscription_tier, TIER_CONFIG["free"])
-        has_watermark = tier_config["watermark"]
-        
-        if has_watermark:
-            output_image = add_watermark(output_image)
-        
-        # Save processed image
+        # Determine output format
         output_format = format.lower()
         if output_format not in ["png", "jpg", "jpeg", "webp"]:
             output_format = "png"
         
-        output_filename = f"{file_id}.{output_format}"
-        output_path = OUTPUT_DIR / output_filename
+        # Save CLEAN version (for later download)
+        clean_filename = f"{file_id}_clean.{output_format}"
+        clean_path = OUTPUT_DIR / clean_filename
         
         if output_format in ["jpg", "jpeg"]:
             # JPG doesn't support transparency, add white background
             background = Image.new("RGB", output_image.size, (255, 255, 255))
             background.paste(output_image, mask=output_image.split()[3] if len(output_image.split()) == 4 else None)
-            background.save(output_path, format="JPEG", quality=95)
+            background.save(clean_path, format="JPEG", quality=95)
         else:
-            output_image.save(output_path, format=output_format.upper())
+            output_image.save(clean_path, format=output_format.upper())
+        
+        # Add watermark for PREVIEW
+        watermarked_image = add_watermark(output_image)
+        
+        # Save PREVIEW version (watermarked)
+        preview_filename = f"{file_id}_preview.{output_format}"
+        preview_path = OUTPUT_DIR / preview_filename
+        
+        if output_format in ["jpg", "jpeg"]:
+            background = Image.new("RGB", watermarked_image.size, (255, 255, 255))
+            background.paste(watermarked_image, mask=watermarked_image.split()[3] if len(watermarked_image.split()) == 4 else None)
+            background.save(preview_path, format="JPEG", quality=95)
+        else:
+            watermarked_image.save(preview_path, format=output_format.upper())
         
         # Get file sizes
         original_size = os.path.getsize(input_path)
-        output_size = os.path.getsize(output_path)
+        output_size = os.path.getsize(clean_path)
         
         # Calculate processing time
         processing_time = int((datetime.utcnow() - start_time).total_seconds() * 1000)
         
-        # Deduct credit
-        current_user.use_credit()
-        
-        # Record usage
+        # Record usage (but don't charge credit yet)
         usage_record = UsageRecord(
             user_id=current_user.id,
             original_filename=file.filename,
@@ -261,19 +270,19 @@ async def remove_background(
         db.add(usage_record)
         db.commit()
         
-        # Return result
+        # Return PREVIEW result (watermarked, no credit charged)
         return ProcessImageResponse(
             success=True,
             file_id=file_id,
-            output_url=f"/outputs/{output_filename}",
-            download_url=f"/api/download/{file_id}",
+            output_url=f"/outputs/{preview_filename}",  # Watermarked preview
+            download_url=f"/api/download/{file_id}",     # Clean version (costs credit)
             original_filename=file.filename,
-            output_filename=output_filename,
+            output_filename=preview_filename,
             original_size=original_size,
             output_size=output_size,
             format=output_format,
-            has_watermark=has_watermark,
-            credits_remaining=current_user.credits_remaining,
+            has_watermark=True,  # Preview is ALWAYS watermarked
+            credits_remaining=current_user.credits_remaining,  # Not deducted yet
             timestamp=datetime.utcnow()
         )
         
@@ -284,20 +293,34 @@ async def remove_background(
 @app.get("/api/download/{file_id}")
 async def download_file(
     file_id: str,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
 ):
-    """Download processed image"""
-    # Find file with any extension
+    """
+    Download processed image (CLEAN, no watermark) - Costs 1 credit
+    
+    This endpoint returns the clean version without watermark.
+    Requires available credits (deducts 1 credit per download).
+    """
+    # Check if user has credits
+    check_user_credits(current_user)
+    
+    # Find clean file
     for ext in ["png", "jpg", "jpeg", "webp"]:
-        file_path = OUTPUT_DIR / f"{file_id}.{ext}"
+        file_path = OUTPUT_DIR / f"{file_id}_clean.{ext}"
         if file_path.exists():
+            # Deduct credit
+            current_user.use_credit()
+            db.commit()
+            
+            # Return clean file
             return FileResponse(
                 file_path,
                 media_type=f"image/{ext}",
                 filename=f"removebg-pro-{file_id}.{ext}"
             )
     
-    raise HTTPException(status_code=404, detail="File not found")
+    raise HTTPException(status_code=404, detail="File not found or expired")
 
 
 # ============================================================================
@@ -388,7 +411,7 @@ async def stripe_webhook(request: dict, db: Session = Depends(get_db)):
             for tier, pid in STRIPE_PRICE_IDS.items():
                 if pid == price_id:
                     user.subscription_tier = tier
-                    user.monthly_credits = TIER_CONFIG[tier]["credits"]
+                    user.monthly_credits = TIER_CONFIG[tier]["downloads"]
                     break
             
             db.commit()
