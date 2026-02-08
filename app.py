@@ -100,7 +100,7 @@ async def startup():
 @app.get("/", response_class=HTMLResponse)
 async def home():
     """Serve the main web interface"""
-    html_path = Path("static/index.html")
+    html_path = Path("static/app.html")
     if html_path.exists():
         return HTMLResponse(content=html_path.read_text())
     return HTMLResponse(content="<h1>RemoveBG Pro API</h1><p>Visit /docs for API documentation.</p>")

@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RemoveBG Pro - AI Background Remover</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        /* Navigation */
+        .navbar {
+            background: white;
+            padding: 15px 30px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .navbar-brand {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .navbar-menu {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+        
+        .nav-link {
+            color: #333;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+        
+        .nav-link:hover {
+            color: #667eea;
+        }
+        
+        .btn {
+            padding: 10px 25px;
+            border: none;
+            border-radius: 25px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+        
+        .btn-secondary:hover {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-small {
+            padding: 8px 20px;
+            font-size: 0.9em;
+        }
+        
+        /* Container */
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 900px;
+            width: 100%;
+            padding: 40px;
+            margin: 0 auto;
+        }
+        
+        /* User Info Bar */
+        .user-info {
+            background: #f0f4ff;
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            display: none;
+        }
+        
+        .user-info.active {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .credits-display {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #667eea;
+        }
+        
+        .tier-badge {
+            background: #667eea;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 15px;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            max-width: 500px;
+            width: 90%;
+            position: relative;
+        }
+        
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 2em;
+            cursor: pointer;
+            color: #999;
+        }
+        
+        .modal-close:hover {
+            color: #333;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .form-submit {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        
+        .form-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .form-footer {
+            text-align: center;
+            margin-top: 20px;
+            color: #666;
+        }
+        
+        .form-footer a {
+            color: #667eea;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        
+        .form-footer a:hover {
+            text-decoration: underline;
+        }
+        
+        .error-message {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .success-message {
+            background: #d1fae5;
+            color: #065f46;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        /* Upload Area */
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 60px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 30px;
+        }
+        
+        .upload-area:hover {
+            border-color: #764ba2;
+            background: #f8f9ff;
+        }
+        
+        .upload-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+        
+        #fileInput {
+            display: none;
+        }
+        
+        /* Format Selection */
+        .format-selector {
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .format-btn {
+            padding: 10px 25px;
+            margin: 0 5px;
+            border: 2px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .format-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+        
+        .format-btn.active {
+            background: #667eea;
+            color: white;
+        }
+        
+        /* Results */
+        .results {
+            display: none;
+        }
+        
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .image-box {
+            text-align: center;
+        }
+        
+        .image-box h4 {
+            margin-bottom: 10px;
+        }
+        
+        .image-box img {
+            max-width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .watermark-notice {
+            background: #fef3c7;
+            color: #92400e;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .watermark-notice strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 30px;
+            display: none;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Pricing Page */
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+            margin-top: 30px;
+        }
+        
+        .pricing-card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        
+        .pricing-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+        
+        .pricing-card.featured {
+            border-color: #667eea;
+            transform: scale(1.05);
+        }
+        
+        .pricing-card h3 {
+            font-size: 1.5em;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .pricing-card .price {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        .pricing-card .price span {
+            font-size: 0.4em;
+            color: #666;
+        }
+        
+        .pricing-card ul {
+            list-style: none;
+            margin: 20px 0;
+            text-align: left;
+        }
+        
+        .pricing-card li {
+            padding: 8px 0;
+            color: #666;
+        }
+        
+        .pricing-card li:before {
+            content: "✓ ";
+            color: #10b981;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+        
+        @media (max-width: 768px) {
+            .comparison {
+                grid-template-columns: 1fr;
+            }
+            
+            .navbar {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .pricing-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="navbar-brand">🎨 RemoveBG Pro</div>
+        <div class="navbar-menu">
+            <a href="#" class="nav-link" onclick="showApp()">App</a>
+            <a href="#" class="nav-link" onclick="showPricing()">Pricing</a>
+            <div id="authButtons">
+                <button class="btn btn-small btn-secondary" onclick="showLogin()">Log In</button>
+                <button class="btn btn-small btn-primary" onclick="showSignup()">Sign Up</button>
+            </div>
+            <div id="userButtons" style="display: none;">
+                <span id="userEmail" style="margin-right: 15px; font-weight: 600;"></span>
+                <button class="btn btn-small btn-secondary" onclick="logout()">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main App Container -->
+    <div class="container" id="appContainer">
+        <!-- User Info Bar -->
+        <div class="user-info" id="userInfo">
+            <div>
+                <div class="credits-display">
+                    <span id="creditsRemaining">--</span> / <span id="creditsTotal">--</span> credits remaining
+                </div>
+            </div>
+            <div>
+                <span class="tier-badge" id="tierBadge">Free</span>
+            </div>
+        </div>
+
+        <div class="error-message" id="errorBox"></div>
+        <div class="success-message" id="successBox"></div>
+        
+        <div class="upload-section" id="uploadSection">
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">📸</div>
+                <h3>Drop your image here</h3>
+                <p>or click to browse (JPG, PNG, WebP - max 10MB)</p>
+                <input type="file" id="fileInput" accept="image/jpeg,image/jpg,image/png,image/webp">
+            </div>
+            
+            <div class="format-selector">
+                <label>Output Format:</label>
+                <button class="format-btn active" data-format="png">PNG</button>
+                <button class="format-btn" data-format="jpg">JPG</button>
+                <button class="format-btn" data-format="webp">WebP</button>
+            </div>
+            
+            <button class="btn btn-primary" id="processBtn" style="width: 100%;" disabled>Remove Background</button>
+        </div>
+        
+        <div class="loading" id="loadingSection">
+            <div class="spinner"></div>
+            <h3>Processing your image...</h3>
+            <p>This may take a few seconds</p>
+        </div>
+        
+        <div class="results" id="resultsSection">
+            <div class="watermark-notice" id="watermarkNotice" style="display: none;">
+                <strong>⚠️ Free Tier - Watermarked Preview</strong>
+                <p>Upgrade to Basic ($5/mo) to download without watermark</p>
+            </div>
+            
+            <div class="comparison">
+                <div class="image-box">
+                    <h4>Original</h4>
+                    <img id="originalImage" alt="Original">
+                </div>
+                <div class="image-box">
+                    <h4>Background Removed</h4>
+                    <img id="processedImage" alt="Processed">
+                </div>
+            </div>
+            
+            <button class="btn btn-primary" id="downloadBtn" style="width: 100%; margin-bottom: 10px;">Download Image</button>
+            <button class="btn btn-secondary" id="resetBtn" style="width: 100%;">Process Another Image</button>
+        </div>
+    </div>
+
+    <!-- Pricing Container -->
+    <div class="container" id="pricingContainer" style="display: none;">
+        <h1 style="text-align: center; margin-bottom: 10px;">Choose Your Plan</h1>
+        <p style="text-align: center; color: #666; margin-bottom: 40px;">Remove backgrounds with AI. Upgrade anytime.</p>
+        
+        <div class="pricing-grid">
+            <div class="pricing-card">
+                <h3>Free</h3>
+                <div class="price">$0<span>/month</span></div>
+                <ul>
+                    <li>3 images per month</li>
+                    <li>With watermark</li>
+                    <li>Full resolution</li>
+                    <li>Community support</li>
+                </ul>
+                <button class="btn btn-secondary" style="width: 100%;" onclick="showApp()">Current Plan</button>
+            </div>
+            
+            <div class="pricing-card featured">
+                <h3>Basic</h3>
+                <div class="price">$5<span>/month</span></div>
+                <ul>
+                    <li>50 images per month</li>
+                    <li>No watermark</li>
+                    <li>Full resolution</li>
+                    <li>Email support</li>
+                </ul>
+                <button class="btn btn-primary" style="width: 100%;" onclick="checkout('basic')">Upgrade Now</button>
+            </div>
+            
+            <div class="pricing-card">
+                <h3>Pro</h3>
+                <div class="price">$15<span>/month</span></div>
+                <ul>
+                    <li>500 images per month</li>
+                    <li>No watermark</li>
+                    <li>API access</li>
+                    <li>Priority support</li>
+                </ul>
+                <button class="btn btn-primary" style="width: 100%;" onclick="checkout('pro')">Upgrade Now</button>
+            </div>
+            
+            <div class="pricing-card">
+                <h3>Business</h3>
+                <div class="price">$50<span>/month</span></div>
+                <ul>
+                    <li>5,000 images per month</li>
+                    <li>No watermark</li>
+                    <li>API access</li>
+                    <li>Priority support</li>
+                    <li>Custom integrations</li>
+                </ul>
+                <button class="btn btn-primary" style="width: 100%;" onclick="checkout('business')">Upgrade Now</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div class="modal" id="loginModal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeModal('loginModal')">&times;</span>
+            <h2 style="margin-bottom: 30px;">Log In</h2>
+            <div class="error-message" id="loginError"></div>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" name="password" required>
+                </div>
+                <button type="submit" class="form-submit">Log In</button>
+            </form>
+            <div class="form-footer">
+                Don't have an account? <a onclick="closeModal('loginModal'); showSignup();">Sign Up</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Signup Modal -->
+    <div class="modal" id="signupModal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeModal('signupModal')">&times;</span>
+            <h2 style="margin-bottom: 30px;">Sign Up</h2>
+            <div class="error-message" id="signupError"></div>
+            <form id="signupForm">
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" name="full_name">
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" name="password" minlength="8" required>
+                </div>
+                <button type="submit" class="form-submit">Sign Up</button>
+            </form>
+            <div class="form-footer">
+                Already have an account? <a onclick="closeModal('signupModal'); showLogin();">Log In</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
