@@ -1,10 +1,14 @@
 """
-RemoveBG Pro - AI Background Remover Service with Monetization
+QuickTools - Professional Automation Platform
 Main application file
 
-NEW PRICING MODEL:
-- Preview: Always FREE and watermarked (unlimited)
-- Download: Costs 1 credit per download (clean version, no watermark)
+Multi-tool SaaS platform for quick professional tasks:
+- Background removal
+- Image processing
+- PDF tools
+- And more...
+
+Pricing: Credit-based system (1 task = 1 credit)
 """
 from fastapi import FastAPI, File, UploadFile, HTTPException, Depends, Form
 from fastapi.staticfiles import StaticFiles
@@ -40,9 +44,9 @@ from typing import Union
 
 # Initialize app
 app = FastAPI(
-    title="RemoveBG Pro API",
-    description="AI-powered background removal service with monetization",
-    version="2.0.0"
+    title="QuickTools API",
+    description="Professional automation platform - Quick tools for everyday tasks",
+    version="1.0.0"
 )
 
 # CORS middleware
@@ -109,10 +113,10 @@ async def startup():
 @app.get("/", response_class=HTMLResponse)
 async def home():
     """Serve the main web interface"""
-    html_path = Path("static/app.html")
+    html_path = Path("static/index.html")
     if html_path.exists():
         return HTMLResponse(content=html_path.read_text())
-    return HTMLResponse(content="<h1>RemoveBG Pro API</h1><p>Visit /docs for API documentation.</p>")
+    return HTMLResponse(content="<h1>QuickTools API</h1><p>Visit /docs for API documentation.</p>")
 
 
 @app.get("/api/health")

@@ -1,243 +1,249 @@
-# RemoveBG Pro - AI Background Remover
+# QuickTools - Professional Automation Platform
 
-**Remove image backgrounds in seconds with AI**
-
-Built for e-commerce sellers, designers, and anyone needing clean product photos.
-
----
-
-## 🚀 Features
-
-- ✅ AI-powered background removal
-- ✅ High-quality results (better than manual selection)
-- ✅ Batch processing
-- ✅ API access
-- ✅ Multiple export formats (PNG, JPG, WebP)
-- ✅ Original quality preserved
-- ✅ No Photoshop skills needed
+**Status:** 🚀 Production Ready  
+**Built:** 2026-02-07 to 2026-02-08  
+**Version:** 1.0.0  
 
 ---
 
-## 💰 Business Model
+## 🎯 What is QuickTools?
 
-**Free Tier:**
-- 3 images per month
-- Basic quality
-- RemoveBG watermark
+QuickTools is a professional automation platform that makes everyday tasks instant. Remove backgrounds, process images, merge PDFs, generate QR codes, and more - all in one place.
 
-**Basic ($5/month):**
-- 50 images per month
-- High quality
-- No watermark
-- Priority processing
-
-**Pro ($15/month):**
-- 500 images per month
-- Highest quality
-- API access
-- Batch processing
-- Commercial license
-
-**Business ($50/month):**
-- 5,000 images per month
-- Everything in Pro
-- Priority support
-- Custom integrations
+**Mission:** Replace 10 different SaaS subscriptions with one simple platform.
 
 ---
 
-## 🎯 Target Market
+## ✨ Features
 
-1. **E-commerce sellers** (Amazon, eBay, Shopify)
-2. **Social media managers** (Instagram, Facebook)
-3. **Graphic designers** (mockups, presentations)
-4. **Real estate agents** (property photos)
-5. **Job seekers** (professional headshots)
-6. **Small businesses** (marketing materials)
+### Current Tools
+- **Background Removal** - AI-powered background removal for perfect product photos
+- **Coming Soon:** Bulk Resize, PDF Tools, QR Codes, and more
 
----
-
-## 🛠️ Tech Stack
-
-**Backend:**
-- Python 3.9+
-- FastAPI (REST API)
-- rembg (AI background removal)
-- Pillow (image processing)
-- SQLite → PostgreSQL (production)
-
-**Frontend:**
-- HTML5/CSS3/JavaScript
-- Dropzone.js (file uploads)
-- Bootstrap 5 (responsive design)
-
-**Payment:**
-- Stripe (subscriptions)
-
-**Hosting:**
-- Fly.io or Render ($10-50/mo)
-- Cloudflare (CDN, free)
+### Platform Features
+- ✅ Credit-based pricing (1 task = 1 credit)
+- ✅ Unlimited FREE previews (watermarked)
+- ✅ Clean downloads (costs credits)
+- ✅ User authentication (JWT + bcrypt)
+- ✅ Stripe subscription integration
+- ✅ RESTful API access (Pro & Business tiers)
+- ✅ Tier-based support system
+- ✅ Beautiful, professional UI
+- ✅ Docker deployment ready
 
 ---
 
-## 📦 Quick Start
+## 💰 Pricing
 
-### Installation
+| Tier | Price | Credits/Month | API Access | Support |
+|------|-------|---------------|------------|---------|
+| **Free** | $0 | 10 | ❌ | Community |
+| **Basic** | $5 | 100 | ❌ | Email |
+| **Pro** | $15 | 1,000 | ✅ | Priority |
+| **Business** | $50 | 10,000 | ✅ | Priority+ |
+
+**Note:** All credits work across ALL tools. Use them however you want!
+
+---
+
+## 🚀 Quick Start
+
+### Local Development
 
 ```bash
-# Clone repo
-git clone https://github.com/amreinch/removebg-pro.git
-cd removebg-pro
+# Clone repository
+git clone https://github.com/amreinch/quicktools.git
+cd quicktools
 
 # Install dependencies
 pip install -r requirements.txt
 
-# Run development server
-python app.py
+# Run server
+uvicorn app:app --host 0.0.0.0 --port 5000
 ```
 
 Visit: http://localhost:5000
 
----
-
-## 🚀 Deployment
+### Docker Deployment
 
 ```bash
-# Build for production
-docker build -t removebg-pro .
+# Build and run
+docker compose up -d
 
-# Deploy to Fly.io
-fly deploy
+# View logs
+docker compose logs -f
 
-# Or deploy to Render
-# Just connect GitHub repo and deploy
+# Stop
+docker compose down
 ```
 
 ---
 
-## 💡 Revenue Projections
+## 📊 Tech Stack
 
-**Conservative (Month 6):**
-- 2,000 free users
-- 50 Basic ($5) = $250/mo
-- 10 Pro ($15) = $150/mo
-- 2 Business ($50) = $100/mo
-- **Total: $500/mo**
+### Backend
+- **Framework:** FastAPI 0.128+
+- **Server:** Uvicorn (ASGI)
+- **Database:** SQLAlchemy + SQLite/PostgreSQL
+- **Auth:** JWT + bcrypt
+- **Payments:** Stripe SDK
+- **AI:** rembg (U2-Net model)
+- **Images:** Pillow
 
-**Moderate (Year 1):**
-- 10,000 free users
-- 500 Basic = $2,500/mo
-- 100 Pro = $1,500/mo
-- 20 Business = $1,000/mo
-- **Total: $5,000/mo = $60K/year**
+### Frontend
+- **HTML5/CSS3/JavaScript** (no frameworks)
+- **Design:** Modern, professional, responsive
+- **Font:** Inter (Google Fonts)
+- **Icons:** Custom SVG
 
-**Target (Year 2):**
-- 50,000 free users
-- 2,000 Basic = $10,000/mo
-- 500 Pro = $7,500/mo
-- 100 Business = $5,000/mo
-- **Total: $22,500/mo = $270K/year**
-
----
-
-## 📈 Growth Strategy
-
-**Week 1-2:** Build MVP  
-**Week 3:** Beta test with friends  
-**Week 4:** Launch on ProductHunt  
-**Month 2:** SEO (target: "remove background from image")  
-**Month 3:** Paid ads (Google, Facebook)  
-**Month 4:** Partnerships (Shopify apps, Canva integration)  
-**Month 6:** API marketplace listings  
+### Infrastructure
+- **Container:** Docker + docker-compose
+- **Database:** Volume-persisted SQLite/PostgreSQL
+- **Environment:** .env configuration
 
 ---
 
-## 🎨 Competitive Advantage
+## 🔑 Configuration
 
-**vs remove.bg:**
-- ✅ Cheaper ($5 vs $9)
-- ✅ More free credits (3 vs 1)
-- ✅ Better UI/UX
-- ✅ Faster processing
+Copy `.env.example` to `.env` and configure:
 
-**vs Canva:**
-- ✅ Specialized tool (better results)
-- ✅ No subscription lock-in
-- ✅ API access for developers
+```bash
+# Required
+JWT_SECRET_KEY=<generate with: openssl rand -hex 32>
 
-**vs Photoshop:**
-- ✅ Instant (vs 10+ minutes manual work)
-- ✅ No skill required
-- ✅ $5 vs $30/mo
+# Database (SQLite by default, PostgreSQL for production)
+DATABASE_URL=sqlite:///./quicktools.db
+
+# Stripe (for payments)
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_PRICE_BASIC=price_...
+STRIPE_PRICE_PRO=price_...
+STRIPE_PRICE_BUSINESS=price_...
+
+# Frontend URL
+FRONTEND_URL=http://localhost:5000
+```
+
+See `STRIPE_SETUP.md` for complete Stripe configuration guide.
 
 ---
 
-## 📝 Roadmap
+## 📚 Documentation
 
-**MVP (Week 1-2):**
-- [x] Core background removal
-- [x] Web interface
-- [x] Image upload/download
-- [ ] User accounts
-- [ ] Credit system
+- **[STRIPE_SETUP.md](STRIPE_SETUP.md)** - Complete Stripe configuration
+- **[MONETIZATION.md](MONETIZATION.md)** - Business model & pricing
+- **[API_AND_SUPPORT.md](API_AND_SUPPORT.md)** - API access & support features
+- **[LAUNCH_READY.md](LAUNCH_READY.md)** - Launch checklist
+- **[DEPLOYMENT_DOCKER.md](DEPLOYMENT_DOCKER.md)** - Docker deployment
 
-**v1.0 (Week 3-4):**
-- [ ] Stripe integration
-- [ ] Email notifications
-- [ ] Usage dashboard
-- [ ] API endpoints
+---
 
-**v1.5 (Month 2):**
+## 🎨 Brand
+
+**Name:** QuickTools  
+**Tagline:** Professional tools, instantly  
+**Colors:** Blue (#3B82F6) + Purple (#8B5CF6) gradient  
+**Font:** Inter  
+**Vibe:** Modern, professional, efficient  
+
+---
+
+## 🛣️ Roadmap
+
+### Phase 1 (Current)
+- [x] Background removal
+- [x] User authentication
+- [x] Stripe payments
+- [x] API access
+- [x] Support system
+- [x] Professional UI
+
+### Phase 2 (Week 1)
+- [ ] Bulk image resize
+- [ ] Format conversion (JPG/PNG/WebP)
+- [ ] Image compression
+
+### Phase 3 (Week 2)
+- [ ] PDF merge/split
+- [ ] QR code generator
+- [ ] Background replacement
+
+### Phase 4 (Month 1)
 - [ ] Batch processing
-- [ ] Multiple file formats
-- [ ] Image editing tools
-- [ ] Before/after comparison
-
-**v2.0 (Month 3+):**
-- [ ] Mobile apps
-- [ ] Shopify integration
-- [ ] WordPress plugin
-- [ ] Advanced AI features
+- [ ] Watermark adding
+- [ ] Text tools
+- [ ] Screenshot tools
 
 ---
 
-## 📊 Market Validation
+## 🔒 Security
 
-**Google Search Volume:**
-- "remove background from image": 450K/month
-- "background remover": 201K/month
-- "remove bg": 165K/month
-- **Total: 800K+ searches/month**
+- ✅ JWT token authentication (7-day expiry)
+- ✅ Bcrypt password hashing (Python 3.14 compatible)
+- ✅ API key SHA256 hashing
+- ✅ CORS middleware
+- ✅ Input validation (Pydantic)
+- ✅ Rate limiting ready
+- ✅ `.env` gitignored
 
-**Competitor Revenue:**
-- remove.bg: $10M+/year (estimated)
-- Canva bg remover: Part of $1B+ company
-- Photoshop: Part of Adobe's billions
+---
 
-**Market is HUGE and proven!**
+## 📈 Market Opportunity
+
+**Target Market:**
+- E-commerce sellers (Amazon, Shopify, eBay)
+- Social media managers
+- Graphic designers
+- Small businesses
+- Content creators
+- Developers (API access)
+
+**Revenue Potential:**
+- Conservative (Month 6): $775/mo
+- Moderate (Year 1): $7,500/mo
+- Target (Year 2): $33,750/mo
+
+**Conversion Strategy:**
+- Freemium model (10 free tasks)
+- Unlimited preview testing
+- Pay-per-use (1 credit = 1 task)
+- Multi-tool value proposition
 
 ---
 
 ## 🤝 Contributing
 
-This is a commercial project, but contributions welcome during MVP phase!
+This is a private project. For questions or suggestions, contact via the support form.
 
 ---
 
 ## 📄 License
 
-Proprietary - All rights reserved
+All rights reserved © 2026 QuickTools
 
 ---
 
-## 🔗 Links
+## 🚀 Deployment
 
-- Website: https://removebg.pro (TBD)
-- Twitter: @removebgpro (TBD)
-- Support: support@removebg.pro (TBD)
+### Production Checklist
+- [ ] Configure production Stripe keys
+- [ ] Set secure JWT_SECRET_KEY
+- [ ] Switch to PostgreSQL database
+- [ ] Set up SSL certificate
+- [ ] Configure domain
+- [ ] Enable Stripe webhooks
+- [ ] Set up monitoring
+- [ ] Configure backups
+
+### Recommended Hosting
+- **Render.com** (easiest, $7/mo)
+- **Fly.io** (fast, free tier)
+- **DigitalOcean** (full control, $4-12/mo)
 
 ---
 
-**Built to make money while solving a real problem.** 💰
+**Built with ❤️ by pioneering developers**
 
-Let's do this! 🚀
+**Repository:** https://github.com/amreinch/quicktools  
+**Live Demo:** Coming Soon  
+**Contact:** support@quicktools.com (coming soon)

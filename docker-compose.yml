@@ -1,17 +1,17 @@
 services:
   web:
     build: .
-    container_name: removebg-pro
+    container_name: quicktools
     ports:
       - "5000:5000"
     volumes:
       - ./uploads:/app/uploads
       - ./outputs:/app/outputs
-      - ./removebg.db:/app/removebg.db
+      - ./quicktools.db:/app/quicktools.db
     environment:
       - PYTHONUNBUFFERED=1
       - JWT_SECRET_KEY=${JWT_SECRET_KEY:-change-this-secret-key}
-      - DATABASE_URL=sqlite:///./removebg.db
+      - DATABASE_URL=sqlite:///./quicktools.db
       - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
       - STRIPE_PRICE_BASIC=${STRIPE_PRICE_BASIC}
       - STRIPE_PRICE_PRO=${STRIPE_PRICE_PRO}
@@ -19,5 +19,5 @@ services:
       - FRONTEND_URL=${FRONTEND_URL:-http://localhost:5000}
     restart: unless-stopped
     labels:
-      - "com.project=removebg-pro"
+      - "com.project=quicktools"
       - "com.type=api"

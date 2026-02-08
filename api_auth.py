@@ -12,9 +12,9 @@ from typing import Optional
 
 def generate_api_key() -> str:
     """Generate a secure random API key"""
-    # Format: rbp_live_xxxxxxxxxxxxxxxxxxxxxxxxxxxxx (32 chars after prefix)
+    # Format: qt_live_xxxxxxxxxxxxxxxxxxxxxxxxxxxxx (32 chars after prefix)
     random_part = secrets.token_urlsafe(24)  # ~32 chars base64
-    return f"rbp_live_{random_part}"
+    return f"qt_live_{random_part}"
 
 
 def hash_api_key(key: str) -> str:
