@@ -2,50 +2,63 @@
 
 ## 💰 Complete Freemium Model with Stripe Integration
 
-This document explains how the monetization system works.
+**Updated:** 2026-02-08 - New pricing model implemented
 
 ---
 
 ## 🎯 Business Model
 
-### Freemium Strategy
+### Freemium Strategy: Preview → Test → Convert
 
-**Free Tier** → **Paid Conversion** → **Retention**
+**New Model (2026-02-08):**
 
-Users get value immediately (free tier), see quality, then upgrade for more credits and no watermark.
+1. **Preview is FREE** → Unlimited watermarked previews
+2. **Test Quality** → Users can test as many images as they want
+3. **Download Costs Credit** → Only pay when downloading clean version
+4. **Convert to Paid** → Better UX drives higher conversion
+
+**Why This Works:**
+- Lower barrier to entry (no credit anxiety)
+- Users see full value before spending
+- "Try before you buy" for every image
+- Higher conversion rates (users know exactly what they're getting)
 
 ---
 
 ## 📊 Subscription Tiers
 
+### Updated Pricing (2026-02-08)
+
+**Key Change:** Preview is UNLIMITED & FREE for all tiers. Credits = Downloads only.
+
 ### Free
 - **Price:** $0/month
-- **Credits:** 3 images/month
-- **Watermark:** Yes (diagonal overlay)
+- **Preview:** ✅ Unlimited (watermarked)
+- **Downloads:** 3/month (clean, no watermark)
 - **Resolution:** Full
 - **API Access:** No
 - **Support:** Community
 
 ### Basic
 - **Price:** $5/month
-- **Credits:** 50 images/month
-- **Watermark:** No
+- **Preview:** ✅ Unlimited (watermarked)
+- **Downloads:** 50/month (clean, no watermark)
 - **Resolution:** Full
 - **API Access:** No
 - **Support:** Email
 
 ### Pro
 - **Price:** $15/month
-- **Credits:** 500 images/month
-- **Watermark:** No
+- **Preview:** ✅ Unlimited (watermarked)
+- **Downloads:** 500/month (clean, no watermark)
 - **Resolution:** Full
 - **API Access:** Yes
 - **Support:** Priority email
 
 ### Business
 - **Price:** $50/month
-- **Credits:** 5,000 images/month
-- **Watermark:** No
+- **Preview:** ✅ Unlimited (watermarked)
+- **Downloads:** 5,000/month (clean, no watermark)
 - **Resolution:** Full
 - **API Access:** Yes
 - **Support:** Priority + Custom integrations
@@ -54,19 +67,22 @@ Users get value immediately (free tier), see quality, then upgrade for more cred
 
 ## 🎨 Watermark System
 
-### How It Works
+### How It Works (Updated)
 
-**Free users:**
+**ALL USERS (Free + Paid):**
 1. Upload image ✅
 2. AI processes (removes background) ✅
-3. Preview shows result WITH watermark overlay ✅
-4. Download includes watermark ✅
+3. Preview shows result WITH watermark overlay ✅ **FREE & UNLIMITED**
+4. Click "Download" to get clean version:
+   - **Free users:** Use 1 of 3 monthly credits
+   - **Paid users:** Use 1 of 50/500/5000 monthly credits
+5. Download is clean (no watermark) ✅
 
-**Paid users:**
-1. Upload image ✅
-2. AI processes ✅
-3. Preview shows result WITHOUT watermark ✅
-4. Download is clean (no watermark) ✅
+**Key Benefits:**
+- Users can test unlimited images for free
+- No risk of "wasting" a credit on a bad result
+- Clear value proposition (preview vs download)
+- Lower friction → higher conversion
 
 ### Watermark Design
 
@@ -112,9 +128,9 @@ Response:
 
 **What happens:**
 1. Check if email exists
-2. Hash password (bcrypt)
+2. Hash password (bcrypt, Python 3.14 compatible)
 3. Create user in database
-4. Set tier to "free" (3 credits/month)
+4. Set tier to "free" (3 downloads/month)
 5. Generate JWT token (expires in 7 days)
 6. Return token
 
@@ -143,32 +159,33 @@ Authorization: Bearer eyJ...
 ```
 
 **Protected endpoints:**
-- `/api/remove-background` - Process images
-- `/api/download/{file_id}` - Download results
+- `/api/remove-background` - Process images (FREE preview)
+- `/api/download/{file_id}` - Download clean version (costs 1 credit)
 - `/api/stats` - User statistics
 - `/api/create-checkout-session` - Upgrade subscription
 
 ---
 
-## 💳 Credit System
+## 💳 Credit System (Updated)
 
 ### How Credits Work
 
 **Monthly allocation:**
-- Free: 3 credits/month
-- Basic: 50 credits/month
-- Pro: 500 credits/month
-- Business: 5,000 credits/month
+- Free: 3 **downloads**/month (unlimited previews)
+- Basic: 50 **downloads**/month (unlimited previews)
+- Pro: 500 **downloads**/month (unlimited previews)
+- Business: 5,000 **downloads**/month (unlimited previews)
 
 **Credit usage:**
-- 1 credit = 1 image processed
+- Preview: **FREE** (unlimited, watermarked)
+- Download: **1 credit** (clean version, no watermark)
 - Credits reset on same day each month
 - Unused credits don't roll over
 
 **Credit tracking:**
 ```python
 class User(Base):
-    monthly_credits = Column(Integer, default=3)
+    monthly_credits = Column(Integer, default=3)  # Downloads per month
     credits_used_this_month = Column(Integer, default=0)
     credits_reset_date = Column(DateTime, default=datetime.utcnow)
     
@@ -178,34 +195,38 @@ class User(Base):
     
     @property
     def can_process(self):
+        # Preview is always allowed (free)
+        return True
+    
+    @property
+    def can_download(self):
+        # Download requires credits
         return self.credits_remaining > 0
 ```
 
-### Credit Deduction Flow
+### Credit Deduction Flow (Updated)
 
-**When user processes image:**
+**When user previews image:**
+1. No credit check ✅
+2. Process image
+3. Add watermark
+4. Return preview ✅ **FREE**
 
+**When user downloads clean version:**
 1. Check if user has credits (`check_user_credits()`)
-2. If no credits → Return 403 error
-3. Process image
+2. If no credits → Return 403 error with upgrade prompt
+3. Serve clean file (no watermark)
 4. Deduct 1 credit (`user.use_credit()`)
 5. Save to database
-6. Return result with `credits_remaining` in response
+6. Return clean file
 
 ### Monthly Reset
 
 **Automatic reset:**
 ```python
-def check_user_credits(user: User):
-    # Reset if new month
-    if (datetime.utcnow() - user.credits_reset_date).days >= 30:
-        user.reset_monthly_credits()
-```
-
-**Manual reset (admin):**
-```python
-user.reset_monthly_credits()
-db.commit()
+def reset_monthly_credits(self):
+    self.credits_used_this_month = 0
+    self.credits_reset_date = datetime.utcnow()
 ```
 
 ---
@@ -219,25 +240,27 @@ db.commit()
 3. **Price IDs** (monthly recurring)
 4. **Webhook Endpoint** configured
 
+See **STRIPE_SETUP.md** for complete configuration guide.
+
 ### Checkout Flow
 
 **User clicks "Upgrade to Pro":**
 
 ```javascript
-// Frontend
-fetch('/api/create-checkout-session', {
-    method: 'POST',
-    headers: {
-        'Authorization': 'Bearer ' + token,
-        'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ tier: 'pro' })
-})
-.then(res => res.json())
-.then(data => {
-    // Redirect to Stripe Checkout
-    window.location.href = data.url;
-});
+// Frontend (static/app.js)
+async function checkout(tier) {
+    const response = await fetch('/api/create-checkout-session', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ tier })
+    });
+    
+    const data = await response.json();
+    window.location.href = data.url; // Redirect to Stripe
+}
 ```
 
 **Backend creates Stripe session:**
@@ -265,39 +288,25 @@ async def create_checkout_session(tier: str, current_user: User):
     return {"session_id": session.id, "url": session.url}
 ```
 
-**User completes payment on Stripe:**
-- Enters card details
-- Stripe processes payment
-- Redirects back to success page
-
 ### Webhook Handling
-
-**Stripe sends events to `/api/webhook/stripe`:**
 
 **Event: `checkout.session.completed`**
 ```python
-# Payment successful
-user = db.query(User).filter(User.stripe_customer_id == customer_id).first()
+# Payment successful → activate subscription
 user.stripe_subscription_id = subscription_id
 user.subscription_status = "active"
 user.subscription_tier = "pro"  # or basic/business
-user.monthly_credits = 500  # pro tier
+user.monthly_credits = 500  # pro tier downloads
 db.commit()
 ```
 
 **Event: `customer.subscription.deleted`**
 ```python
-# Subscription cancelled
+# Subscription cancelled → downgrade to free
 user.subscription_tier = "free"
 user.subscription_status = "cancelled"
 user.monthly_credits = 3
 db.commit()
-```
-
-**Event: `customer.subscription.updated`**
-```python
-# Plan changed (upgrade/downgrade)
-# Update tier and credits accordingly
 ```
 
 ---
@@ -313,7 +322,7 @@ class User(Base):
     email: str (unique)
     hashed_password: str
     subscription_tier: str (free/basic/pro/business)
-    monthly_credits: int
+    monthly_credits: int  # Downloads per month
     credits_used_this_month: int
     stripe_customer_id: str (nullable)
     stripe_subscription_id: str (nullable)
@@ -333,240 +342,136 @@ class UsageRecord(Base):
     created_at: datetime
 ```
 
-### Analytics Queries
-
-**Total images processed:**
-```python
-total = db.query(UsageRecord).filter(UsageRecord.user_id == user.id).count()
-```
-
-**This month's usage:**
-```python
-from datetime import datetime, timedelta
-month_ago = datetime.utcnow() - timedelta(days=30)
-monthly = db.query(UsageRecord).filter(
-    UsageRecord.user_id == user.id,
-    UsageRecord.created_at >= month_ago
-).count()
-```
-
-**Average processing time:**
-```python
-from sqlalchemy import func
-avg_time = db.query(func.avg(UsageRecord.processing_time)).filter(
-    UsageRecord.user_id == user.id
-).scalar()
-```
-
 ---
 
 ## 🎨 Frontend Integration
 
-### Authentication UI
+### User Flow (Updated)
 
-**Signup Form:**
-```html
-<form id="signupForm">
-    <input type="email" name="email" required>
-    <input type="password" name="password" minlength="8" required>
-    <input type="text" name="full_name">
-    <button type="submit">Sign Up</button>
-</form>
-```
-
-**Login Form:**
-```html
-<form id="loginForm">
-    <input type="email" name="email" required>
-    <input type="password" name="password" required>
-    <button type="submit">Log In</button>
-</form>
-```
-
-**Store Token:**
-```javascript
-// After signup/login
-localStorage.setItem('token', response.access_token);
-
-// Include in all requests
-headers: {
-    'Authorization': 'Bearer ' + localStorage.getItem('token')
-}
-```
-
-### Pricing Page
-
-```html
-<div class="pricing-tiers">
-    <div class="tier free">
-        <h3>Free</h3>
-        <p class="price">$0/month</p>
-        <ul>
-            <li>3 images/month</li>
-            <li>With watermark</li>
-            <li>Full resolution</li>
-        </ul>
-        <button>Current Plan</button>
-    </div>
-    
-    <div class="tier basic">
-        <h3>Basic</h3>
-        <p class="price">$5/month</p>
-        <ul>
-            <li>50 images/month</li>
-            <li>No watermark</li>
-            <li>Full resolution</li>
-        </ul>
-        <button onclick="checkout('basic')">Upgrade</button>
-    </div>
-    
-    <!-- Pro and Business tiers -->
-</div>
-```
-
-### Dashboard
-
-```html
-<div class="dashboard">
-    <h2>Your Account</h2>
-    
-    <div class="stats">
-        <div class="stat">
-            <strong id="creditsRemaining">--</strong>
-            <span>Credits Remaining</span>
-        </div>
-        <div class="stat">
-            <strong id="creditsTotal">--</strong>
-            <span>Monthly Credits</span>
-        </div>
-        <div class="stat">
-            <strong id="totalProcessed">--</strong>
-            <span>Total Processed</span>
-        </div>
-    </div>
-    
-    <div class="subscription">
-        <h3>Current Plan: <span id="currentTier">Free</span></h3>
-        <button onclick="showPricing()">Upgrade</button>
-    </div>
-</div>
-```
-
----
-
-## 🔄 User Journey
-
-### New User (Free Tier)
+**New user journey:**
 
 1. **Visit site** → See homepage
-2. **Try for free** → Upload image (no signup)
-3. **See watermarked result** → "This is what you'll get!"
-4. **Want clean version?** → Prompt to sign up
-5. **Sign up** → Get 3 credits/month
-6. **Process images** → Use 3 credits
-7. **Need more?** → Upgrade prompt
-8. **Upgrade to Basic** → $5/month, 50 credits, no watermark
+2. **Upload image** → Instant preview (no signup needed)
+3. **See watermarked result** → "This is the quality you'll get!"
+4. **Like it? Sign up** → Get 3 free downloads/month
+5. **Download clean version** → Use 1 of 3 credits
+6. **Need more?** → Upgrade to Basic ($5/mo, 50 downloads)
 
-### Upgrading User
+**Key improvement:** Users see quality BEFORE spending anything.
 
-1. **Click "Upgrade"** → See pricing page
-2. **Choose plan** → Basic/Pro/Business
-3. **Checkout** → Redirected to Stripe
-4. **Enter payment** → Secure Stripe checkout
-5. **Success** → Redirected back
-6. **Credits updated** → Immediately available
-7. **Process without watermark** → Clean downloads
+### UI Labels (Updated)
 
-### Subscription Management
+```javascript
+// Credits display
+"💾 3 / 50 downloads remaining"  // Not "credits"
 
-1. **Dashboard** → View current plan
-2. **Change plan** → Upgrade or downgrade
-3. **Cancel** → Return to free tier (keeps current credits until month end)
-4. **Reactivate** → Resume paid plan
+// Watermark notice
+"📸 Watermarked Preview (FREE)"
+"This is a free preview. Click Download to get clean version (1 credit)."
+
+// Download button
+"💾 Download Clean Version (1 credit)"
+
+// Pricing tiers
+"Unlimited previews + 50 downloads/month"
+```
 
 ---
 
-## 📊 Revenue Projections
+## 📊 Revenue Projections (Updated)
+
+### Why This Model Makes More Money
+
+**Old Model Problems:**
+- Users afraid to "waste" credits
+- Low engagement (limited testing)
+- High friction to first value
+
+**New Model Benefits:**
+- Users test unlimited (higher engagement)
+- See quality before spending (higher conversion)
+- Lower anxiety (no wasted credits)
+- Better word-of-mouth (free tier actually useful)
 
 ### Conservative (Month 6)
 
-- 2,000 free users
-- 50 Basic ($5) = **$250/mo**
-- 10 Pro ($15) = **$150/mo**
-- 2 Business ($50) = **$100/mo**
-- **Total: $500/month** ($6K/year)
+- 3,000 free users (up from 2,000 - easier signup)
+- 80 Basic ($5) = **$400/mo** (up from 50)
+- 15 Pro ($15) = **$225/mo** (up from 10)
+- 3 Business ($50) = **$150/mo** (up from 2)
+- **Total: $775/month** (+55% vs old model)
 
 ### Moderate (Year 1)
 
-- 10,000 free users
-- 500 Basic = **$2,500/mo**
-- 100 Pro = **$1,500/mo**
-- 20 Business = **$1,000/mo**
-- **Total: $5,000/month** ($60K/year)
+- 15,000 free users (up from 10,000)
+- 750 Basic = **$3,750/mo** (up from 500)
+- 150 Pro = **$2,250/mo** (up from 100)
+- 30 Business = **$1,500/mo** (up from 20)
+- **Total: $7,500/month** ($90K/year, +50% vs old model)
 
 ### Target (Year 2)
 
-- 50,000 free users
-- 2,000 Basic = **$10,000/mo**
-- 500 Pro = **$7,500/mo**
-- 100 Business = **$5,000/mo**
-- **Total: $22,500/month** ($270K/year)
+- 75,000 free users (up from 50,000)
+- 3,000 Basic = **$15,000/mo**
+- 750 Pro = **$11,250/mo**
+- 150 Business = **$7,500/mo**
+- **Total: $33,750/month** ($405K/year, +50% vs old model)
 
-**Conversion rates:**
-- Free → Paid: 2-5% (industry average)
+**Conversion rates (expected higher):**
+- Free → Paid: 4-7% (up from 2-5% due to lower friction)
 - Basic → Pro: 20% (value upgrade)
-- Churn: 5-10% monthly (managed with value adds)
+- Churn: 3-7% monthly (down from 5-10% - better retention)
 
 ---
 
 ## 🎯 Conversion Optimization
 
-### Tactics
-
-1. **Show value immediately** - Free tier works fully
-2. **Watermark preview** - See quality before paying
-3. **Usage limits** - Run out of credits → upgrade prompt
-4. **Social proof** - "Join 10,000+ users"
-5. **Urgency** - "Limited time: First month 50% off"
-6. **Comparison** - "vs Photoshop: $5 vs $30/mo"
-7. **Testimonials** - Real user reviews
-8. **Use cases** - "Perfect for e-commerce sellers"
-
-### Messaging
+### New Messaging
 
 **Free tier CTA:**
-> "Remove backgrounds from 3 images free every month. No credit card required."
+> "Remove backgrounds from unlimited images. Preview for free, download 3 clean images/month. No credit card required."
 
 **Upgrade prompt:**
-> "You've used all 3 free credits this month. Upgrade to Basic for just $5/mo and get 50 credits + no watermark."
+> "You've used all 3 downloads this month. Upgrade to Basic for $5/mo and get 50 downloads + continue unlimited previews."
 
 **Value proposition:**
-> "Remove backgrounds in seconds with AI. Better than Photoshop, easier than manual editing, cheaper than hiring a designer."
+> "Test unlimited images for free. Only pay when you download the clean version. Better than Photoshop, easier than manual editing."
+
+### Tactics (Updated)
+
+1. **Unlimited testing** - No fear of wasting credits
+2. **Watermark quality preview** - See exact result before paying
+3. **Clear pricing** - "Unlimited previews FREE, $5/mo for 50 downloads"
+4. **Social proof** - "Join 15,000+ users testing unlimited"
+5. **Urgency** - "Limited time: First month 50% off"
+6. **Comparison** - "vs Remove.bg: $0.09/image = $4.50 for 50"
+7. **Use cases** - "Perfect for e-commerce sellers, designers, marketers"
 
 ---
 
 ## ✅ Implementation Checklist
 
 ### Backend
-- [x] User authentication (JWT)
-- [x] Password hashing (bcrypt)
+- [x] User authentication (JWT + bcrypt Python 3.14 fix)
 - [x] Database models (User, UsageRecord)
-- [x] Credit system
-- [x] Watermark generation
+- [x] Credit system (downloads only)
+- [x] Watermark generation (all previews)
+- [x] Free preview endpoint (unlimited)
+- [x] Download endpoint (costs 1 credit)
 - [x] Stripe integration
 - [x] Webhook handling
 - [ ] Email notifications (future)
 - [ ] API rate limiting (future)
 
 ### Frontend
-- [ ] Signup/login forms
-- [ ] Auth token storage
-- [ ] Pricing page
-- [ ] Checkout integration
-- [ ] User dashboard
-- [ ] Usage stats display
-- [ ] Upgrade prompts
-- [ ] Watermark indicator
+- [x] Signup/login forms
+- [x] Auth token storage
+- [x] Pricing page (updated labels)
+- [x] Checkout integration
+- [x] User dashboard
+- [x] Usage stats display (downloads)
+- [x] Watermark notice (always shown)
+- [x] Download button (credit check)
 
 ### Deployment
 - [x] Docker configuration
@@ -578,6 +483,31 @@ headers: {
 
 ---
 
-**Full monetization system ready to deploy! 💰**
+## 📝 Migration Notes
 
-Next step: Build the frontend UI for auth + pricing!
+**Changed from old model (2026-02-08):**
+
+| Old Model | New Model |
+|-----------|-----------|
+| 3 credits = 3 full processes | 3 credits = 3 downloads |
+| Preview + download = 1 credit | Preview FREE, download = 1 credit |
+| Limited testing (credit anxiety) | Unlimited testing (no anxiety) |
+| "3 images/month" | "Unlimited previews + 3 downloads/month" |
+| Watermark only on free tier | Watermark on ALL previews (all tiers) |
+
+**Backend changes:**
+- `/api/remove-background` - No credit check, always returns watermarked preview
+- `/api/download/{file_id}` - Added credit check, returns clean version
+- Saves both `_preview.png` (watermarked) and `_clean.png` (no watermark)
+
+**Frontend changes:**
+- Removed credit check before preview
+- Added credit check before download
+- Updated all labels: "downloads" instead of "images"
+- Watermark notice always visible
+
+---
+
+**Complete monetization system with improved UX! 💰**
+
+Better conversion expected through unlimited free testing + clear value proposition.
