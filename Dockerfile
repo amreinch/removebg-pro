@@ -21,6 +21,7 @@ COPY app.py .
 COPY models.py .
 COPY database.py .
 COPY auth.py .
+COPY api_auth.py .
 COPY schemas.py .
 COPY watermark.py .
 COPY static/ static/
