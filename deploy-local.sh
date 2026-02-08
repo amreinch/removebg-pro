@@ -7,16 +7,26 @@ echo ""
 
 cd "$(dirname "$0")"
 
+# Check if we need sudo for docker
+DOCKER_CMD="docker"
+if ! docker ps >/dev/null 2>&1; then
+    echo "🔐 Docker requires sudo..."
+    DOCKER_CMD="sudo docker"
+    COMPOSE_CMD="sudo docker compose"
+else
+    COMPOSE_CMD="docker compose"
+fi
+
 # Stop any existing containers
 echo "🛑 Stopping existing containers..."
-docker compose down 2>/dev/null || true
+$COMPOSE_CMD down 2>/dev/null || true
 
 # Build and start
 echo "🔨 Building Docker image..."
-docker compose build
+$COMPOSE_CMD build
 
 echo "🐘 Starting PostgreSQL..."
-docker compose up -d db
+$COMPOSE_CMD up -d db
 
 echo "⏳ Waiting for PostgreSQL to be ready..."
 sleep 5
@@ -37,7 +47,7 @@ if [ -f "quicktools.db" ]; then
 fi
 
 echo "🚀 Starting QuickTools app..."
-docker compose up -d web
+$COMPOSE_CMD up -d web
 
 echo ""
 echo "✅ QuickTools is now running with PostgreSQL!"
@@ -45,8 +55,8 @@ echo ""
 echo "📍 Access at: http://192.168.0.89:5000"
 echo "🐘 PostgreSQL: localhost:5432"
 echo ""
-echo "📊 View logs: docker compose logs -f"
-echo "🛑 Stop: docker compose down"
-echo "🔄 Restart: docker compose restart"
-echo "💾 Backup DB: docker exec quicktools-db pg_dump -U quicktools quicktools > backup.sql"
+echo "📊 View logs: $COMPOSE_CMD logs -f"
+echo "🛑 Stop: $COMPOSE_CMD down"
+echo "🔄 Restart: $COMPOSE_CMD restart"
+echo "💾 Backup DB: $DOCKER_CMD exec quicktools-db pg_dump -U quicktools quicktools > backup.sql"
 echo ""
