@@ -37,6 +37,7 @@ class User(Base):
     
     # Relationships
     usage_records = relationship("UsageRecord", back_populates="user", cascade="all, delete-orphan")
+    api_keys = relationship("APIKey", back_populates="user", cascade="all, delete-orphan")
     
     @property
     def credits_remaining(self):
@@ -85,13 +86,14 @@ class UsageRecord(Base):
 
 
 class APIKey(Base):
-    """API keys for programmatic access"""
+    """API keys for programmatic access (Pro & Business tiers only)"""
     __tablename__ = "api_keys"
     
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     user_id = Column(String, ForeignKey("users.id"), nullable=False)
     
-    key = Column(String, unique=True, nullable=False, index=True)
+    key_hash = Column(String, unique=True, nullable=False, index=True)  # SHA256 hash
+    key_prefix = Column(String)  # First 8 chars for display (rbp_live_)
     name = Column(String)  # User-defined name
     
     is_active = Column(Boolean, default=True)
@@ -100,4 +102,4 @@ class APIKey(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     
     # Relationship
-    user = relationship("User")
+    user = relationship("User", back_populates="api_keys")

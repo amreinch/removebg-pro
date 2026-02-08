@@ -219,6 +219,14 @@ function updateUI() {
         document.getElementById('creditsRemaining').textContent = currentUser.credits_remaining;
         document.getElementById('creditsTotal').textContent = currentUser.monthly_credits;
         document.getElementById('tierBadge').textContent = currentUser.subscription_tier.toUpperCase();
+        
+        // Show API Keys link for Pro/Business users
+        const apiKeysLink = document.getElementById('apiKeysLink');
+        if (['pro', 'business'].includes(currentUser.subscription_tier)) {
+            apiKeysLink.style.display = 'inline';
+        } else {
+            apiKeysLink.style.display = 'none';
+        }
     } else {
         // Show auth buttons
         document.getElementById('authButtons').style.display = 'flex';
@@ -226,6 +234,9 @@ function updateUI() {
         
         // Hide user info bar
         document.getElementById('userInfo').classList.remove('active');
+        
+        // Hide API Keys link
+        document.getElementById('apiKeysLink').style.display = 'none';
     }
 }
 

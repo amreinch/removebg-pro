@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Keys - RemoveBG Pro</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 900px;
+            padding: 40px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        
+        .notice {
+            background: #f0f4ff;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin-bottom: 30px;
+            border-radius: 5px;
+        }
+        
+        .notice.error {
+            background: #fff5f5;
+            border-left-color: #e53e3e;
+            color: #c53030;
+        }
+        
+        .notice.success {
+            background: #f0fff4;
+            border-left-color: #38a169;
+            color: #2f855a;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+        
+        .btn-danger {
+            background: #e53e3e;
+            color: white;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+        }
+        
+        .api-key-list {
+            margin-top: 30px;
+        }
+        
+        .api-key-item {
+            background: #f9fafb;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .api-key-info h3 {
+            margin-bottom: 5px;
+        }
+        
+        .api-key-info p {
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        .key-prefix {
+            font-family: monospace;
+            background: #e0e0e0;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        
+        .code-block {
+            background: #1a202c;
+            color: #68d391;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 0.9em;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔑 API Keys</h1>
+        <p class="subtitle">Manage your API keys for programmatic access</p>
+        
+        <div id="noticeBox" style="display: none;"></div>
+        
+        <!-- Tier Check -->
+        <div id="tierNotice" style="display: none;" class="notice error">
+            API access requires Pro or Business subscription. <a href="/">Upgrade now</a>
+        </div>
+        
+        <!-- Create API Key Form -->
+        <div id="createForm">
+            <h2>Create New API Key</h2>
+            <form id="keyForm">
+                <div class="form-group">
+                    <label>Key Name</label>
+                    <input type="text" name="name" placeholder="e.g., Production Server" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Generate API Key</button>
+            </form>
+        </div>
+        
+        <!-- New Key Display -->
+        <div id="newKeyDisplay" style="display: none;" class="notice success">
+            <h3>✅ API Key Created!</h3>
+            <p><strong>Save this key securely - it will not be shown again!</strong></p>
+            <div class="code-block" id="newKeyValue"></div>
+            <button class="btn btn-secondary" onclick="copyKey()">📋 Copy to Clipboard</button>
+        </div>
+        
+        <!-- API Usage Example -->
+        <div style="margin-top: 30px;">
+            <h3>Usage Example</h3>
+            <div class="code-block">curl -X POST https://yourapp.com/api/v1/remove-background \<br>
+  -H "X-API-Key: rbp_live_xxxxxxxxxx" \<br>
+  -F "file=@image.jpg" \<br>
+  -F "format=png" \<br>
+  -o output.png</div>
+        </div>
+        
+        <!-- API Key List -->
+        <div class="api-key-list">
+            <h2>Your API Keys</h2>
+            <div id="keysList"></div>
+        </div>
+    </div>
+    
+    <script>
+        const API_BASE = window.location.origin;
+        let currentUser = null;
+        let newKey = null;
+        
+        // Initialize
+        async function init() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/';
+                return;
+            }
+            
+            try {
+                // Load user profile
+                const response = await fetch(`${API_BASE}/api/auth/me`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                currentUser = await response.json();
+                
+                // Check tier
+                if (!['pro', 'business'].includes(currentUser.subscription_tier)) {
+                    document.getElementById('tierNotice').style.display = 'block';
+                    document.getElementById('createForm').style.display = 'none';
+                    return;
+                }
+                
+                // Load API keys
+                await loadKeys();
+            } catch (error) {
+                console.error('Init error:', error);
+                window.location.href = '/';
+            }
+        }
+        
+        // Load API keys
+        async function loadKeys() {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`${API_BASE}/api/keys/list`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+            
+            const list = document.getElementById('keysList');
+            if (data.keys.length === 0) {
+                list.innerHTML = '<p style="color: #666;">No API keys yet. Create one above!</p>';
+                return;
+            }
+            
+            list.innerHTML = data.keys.map(key => `
+                <div class="api-key-item">
+                    <div class="api-key-info">
+                        <h3>${key.name}</h3>
+                        <p>
+                            <span class="key-prefix">${key.prefix}...</span>
+                            <br>
+                            Created: ${new Date(key.created_at).toLocaleDateString()}
+                            ${key.last_used_at ? `<br>Last used: ${new Date(key.last_used_at).toLocaleString()}` : ''}
+                        </p>
+                    </div>
+                    <button class="btn btn-danger" onclick="revokeKey('${key.id}', '${key.name}')">Revoke</button>
+                </div>
+            `).join('');
+        }
+        
+        // Create API key
+        document.getElementById('keyForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const token = localStorage.getItem('token');
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/keys/create`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: formData
+                });
+                
+                if (!response.ok) throw new Error('Failed to create key');
+                
+                const data = await response.json();
+                newKey = data.api_key;
+                
+                // Show new key
+                document.getElementById('newKeyValue').textContent = newKey;
+                document.getElementById('newKeyDisplay').style.display = 'block';
+                
+                // Reset form
+                e.target.reset();
+                
+                // Reload list
+                await loadKeys();
+                
+                // Scroll to key
+                document.getElementById('newKeyDisplay').scrollIntoView({ behavior: 'smooth' });
+            } catch (error) {
+                showNotice('error', 'Failed to create API key: ' + error.message);
+            }
+        });
+        
+        // Copy key to clipboard
+        function copyKey() {
+            navigator.clipboard.writeText(newKey);
+            showNotice('success', 'API key copied to clipboard!');
+        }
+        
+        // Revoke API key
+        async function revokeKey(keyId, name) {
+            if (!confirm(`Revoke API key "${name}"? This cannot be undone.`)) return;
+            
+            const token = localStorage.getItem('token');
+            try {
+                const response = await fetch(`${API_BASE}/api/keys/${keyId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (!response.ok) throw new Error('Failed to revoke key');
+                
+                showNotice('success', 'API key revoked successfully');
+                await loadKeys();
+            } catch (error) {
+                showNotice('error', 'Failed to revoke key: ' + error.message);
+            }
+        }
+        
+        // Show notice
+        function showNotice(type, message) {
+            const box = document.getElementById('noticeBox');
+            box.className = `notice ${type}`;
+            box.textContent = message;
+            box.style.display = 'block';
+            setTimeout(() => box.style.display = 'none', 5000);
+        }
+        
+        // Init on load
+        init();
+    </script>
+</body>
+</html>

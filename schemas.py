@@ -71,3 +71,43 @@ class UsageStats(BaseModel):
     credits_remaining: int
     monthly_credits: int
     subscription_tier: str
+
+
+# API Key schemas
+class APIKeyCreate(BaseModel):
+    name: str = Field(..., min_length=1, max_length=100)
+
+
+class APIKeyResponse(BaseModel):
+    id: str
+    name: str
+    prefix: str
+    is_active: bool
+    last_used_at: Optional[datetime]
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+
+class APIKeyCreateResponse(BaseModel):
+    success: bool
+    api_key: str  # Full key, shown only once
+    key_id: str
+    name: str
+    created_at: datetime
+    warning: str
+
+
+# Support schemas
+class SupportRequest(BaseModel):
+    subject: str = Field(..., min_length=3, max_length=200)
+    message: str = Field(..., min_length=10, max_length=2000)
+
+
+class SupportResponse(BaseModel):
+    success: bool
+    message: str
+    support_level: str
+    expected_response: str
+    email: str

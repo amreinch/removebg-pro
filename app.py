@@ -22,16 +22,21 @@ import stripe
 
 # Import our modules
 from database import get_db, init_db
-from models import User, UsageRecord
+from models import User, UsageRecord, APIKey
 from auth import (
     hash_password, verify_password, create_access_token,
     get_current_user, check_user_credits
+)
+from api_auth import (
+    generate_api_key, hash_api_key, 
+    get_current_user_from_api_key, check_api_access
 )
 from schemas import (
     UserCreate, UserLogin, Token, UserResponse,
     ProcessImageResponse, UsageStats, CheckoutSession
 )
 from watermark import add_watermark
+from typing import Union
 
 # Initialize app
 app = FastAPI(
@@ -440,6 +445,264 @@ async def list_users(db: Session = Depends(get_db)):
     """List all users (admin only - add auth later)"""
     users = db.query(User).all()
     return [{"id": u.id, "email": u.email, "tier": u.subscription_tier} for u in users]
+
+
+# ============================================================================
+# API KEY MANAGEMENT (Pro & Business tiers only)
+# ============================================================================
+
+@app.post("/api/keys/create")
+async def create_api_key(
+    name: str = Form(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Create a new API key (Pro & Business tiers only)
+    Returns the plain key ONCE - store it securely!
+    """
+    # Check if user has API access
+    check_api_access(current_user)
+    
+    # Generate new API key
+    plain_key = generate_api_key()
+    key_hash = hash_api_key(plain_key)
+    key_prefix = plain_key[:16]  # rbp_live_xxxxxxx
+    
+    # Save to database
+    api_key = APIKey(
+        user_id=current_user.id,
+        key_hash=key_hash,
+        key_prefix=key_prefix,
+        name=name
+    )
+    db.add(api_key)
+    db.commit()
+    db.refresh(api_key)
+    
+    return {
+        "success": True,
+        "api_key": plain_key,  # ONLY shown once!
+        "key_id": api_key.id,
+        "name": name,
+        "created_at": api_key.created_at,
+        "warning": "Save this key securely! It will not be shown again."
+    }
+
+
+@app.get("/api/keys/list")
+async def list_api_keys(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """List all API keys for current user"""
+    check_api_access(current_user)
+    
+    keys = db.query(APIKey).filter(
+        APIKey.user_id == current_user.id
+    ).all()
+    
+    return {
+        "keys": [
+            {
+                "id": k.id,
+                "name": k.name,
+                "prefix": k.key_prefix,
+                "is_active": k.is_active,
+                "last_used_at": k.last_used_at,
+                "created_at": k.created_at
+            }
+            for k in keys
+        ]
+    }
+
+
+@app.delete("/api/keys/{key_id}")
+async def revoke_api_key(
+    key_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Revoke (delete) an API key"""
+    check_api_access(current_user)
+    
+    api_key = db.query(APIKey).filter(
+        APIKey.id == key_id,
+        APIKey.user_id == current_user.id
+    ).first()
+    
+    if not api_key:
+        raise HTTPException(status_code=404, detail="API key not found")
+    
+    db.delete(api_key)
+    db.commit()
+    
+    return {"success": True, "message": f"API key '{api_key.name}' revoked"}
+
+
+# ============================================================================
+# API ENDPOINTS (Use with X-API-Key header)
+# ============================================================================
+
+@app.post("/api/v1/remove-background")
+async def api_remove_background(
+    file: UploadFile = File(...),
+    format: str = Form("png"),
+    current_user: User = Depends(get_current_user_from_api_key),
+    db: Session = Depends(get_db)
+):
+    """
+    API endpoint for background removal (requires API key)
+    
+    Usage:
+    curl -X POST https://yourapp.com/api/v1/remove-background \
+         -H "X-API-Key: rbp_live_xxxxxxxxxx" \
+         -F "file=@image.jpg" \
+         -F "format=png"
+    
+    Returns clean image directly (no watermark, costs 1 credit)
+    """
+    # Check credits
+    check_user_credits(current_user)
+    
+    # Validate file type
+    allowed_types = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
+    if file.content_type not in allowed_types:
+        raise HTTPException(status_code=400, detail="Invalid file type")
+    
+    # Read file
+    contents = await file.read()
+    if len(contents) > 10 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="File too large. Max 10MB")
+    
+    try:
+        start_time = datetime.utcnow()
+        
+        # Generate ID
+        file_id = str(uuid.uuid4())
+        
+        # Save original
+        input_path = UPLOAD_DIR / f"{file_id}_api_original{Path(file.filename).suffix}"
+        with open(input_path, "wb") as f:
+            f.write(contents)
+        
+        # Process image
+        input_image = Image.open(io.BytesIO(contents))
+        output_image = remove(input_image)
+        
+        # Determine format
+        output_format = format.lower()
+        if output_format not in ["png", "jpg", "jpeg", "webp"]:
+            output_format = "png"
+        
+        # Save clean version (NO WATERMARK for API)
+        output_filename = f"{file_id}_api.{output_format}"
+        output_path = OUTPUT_DIR / output_filename
+        
+        if output_format in ["jpg", "jpeg"]:
+            background = Image.new("RGB", output_image.size, (255, 255, 255))
+            background.paste(output_image, mask=output_image.split()[3] if len(output_image.split()) == 4 else None)
+            background.save(output_path, format="JPEG", quality=95)
+        else:
+            output_image.save(output_path, format=output_format.upper())
+        
+        # Get sizes
+        original_size = os.path.getsize(input_path)
+        output_size = os.path.getsize(output_path)
+        processing_time = int((datetime.utcnow() - start_time).total_seconds() * 1000)
+        
+        # Deduct credit
+        current_user.use_credit()
+        
+        # Record usage
+        usage_record = UsageRecord(
+            user_id=current_user.id,
+            original_filename=file.filename,
+            file_id=file_id,
+            output_format=output_format,
+            original_size=original_size,
+            output_size=output_size,
+            processing_time=processing_time
+        )
+        db.add(usage_record)
+        db.commit()
+        
+        # Return clean file
+        return FileResponse(
+            output_path,
+            media_type=f"image/{output_format}",
+            filename=f"removed-bg-{file_id}.{output_format}",
+            headers={
+                "X-Credits-Remaining": str(current_user.credits_remaining),
+                "X-Processing-Time-Ms": str(processing_time)
+            }
+        )
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Processing error: {str(e)}")
+
+
+# ============================================================================
+# SUPPORT & CONTACT
+# ============================================================================
+
+@app.post("/api/support/contact")
+async def contact_support(
+    subject: str = Form(...),
+    message: str = Form(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Submit a support request
+    
+    Support levels:
+    - Free: Community support (email saved, manual review)
+    - Basic: Email support (48h response)
+    - Pro: Priority support (24h response)
+    - Business: Priority support (12h response)
+    """
+    # Determine support tier
+    support_tier = {
+        "free": "community",
+        "basic": "email",
+        "pro": "priority",
+        "business": "priority-plus"
+    }.get(current_user.subscription_tier, "community")
+    
+    # Log support request (in production, send email or create ticket)
+    support_data = {
+        "user_id": current_user.id,
+        "email": current_user.email,
+        "tier": current_user.subscription_tier,
+        "support_level": support_tier,
+        "subject": subject,
+        "message": message,
+        "timestamp": datetime.utcnow()
+    }
+    
+    # TODO: In production, integrate with:
+    # - Email service (SendGrid, Mailgun)
+    # - Support ticket system (Zendesk, Intercom)
+    # - Or save to database and notify admin
+    
+    print(f"[SUPPORT REQUEST] {support_data}")  # For now, just log
+    
+    # Return expected response time
+    response_time = {
+        "community": "We'll review your message and respond when possible.",
+        "email": "We'll respond within 48 hours.",
+        "priority": "We'll respond within 24 hours.",
+        "priority-plus": "We'll respond within 12 hours."
+    }
+    
+    return {
+        "success": True,
+        "message": "Support request submitted successfully.",
+        "support_level": support_tier,
+        "expected_response": response_time[support_tier],
+        "email": current_user.email
+    }
 
 
 if __name__ == "__main__":
