@@ -3,10 +3,11 @@ FROM python:3.11-slim
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies (including fonts for watermark)
 RUN apt-get update && apt-get install -y \
     libgl1-mesa-glx \
     libglib2.0-0 \
+    fonts-dejavu-core \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements
@@ -17,6 +18,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application files
 COPY app.py .
+COPY models.py .
+COPY database.py .
+COPY auth.py .
+COPY schemas.py .
+COPY watermark.py .
 COPY static/ static/
 
 # Create necessary directories

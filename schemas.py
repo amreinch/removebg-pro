@@ -1,0 +1,73 @@
+"""
+Pydantic schemas for request/response validation
+"""
+from pydantic import BaseModel, EmailStr, Field
+from typing import Optional
+from datetime import datetime
+
+
+# Auth schemas
+class UserCreate(BaseModel):
+    email: EmailStr
+    password: str = Field(..., min_length=8)
+    full_name: Optional[str] = None
+
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+
+
+class UserResponse(BaseModel):
+    id: str
+    email: str
+    full_name: Optional[str]
+    subscription_tier: str
+    credits_remaining: int
+    monthly_credits: int
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+
+# Subscription schemas
+class SubscriptionTier(BaseModel):
+    name: str
+    price: int  # cents
+    monthly_credits: int
+    features: list[str]
+
+
+class CheckoutSession(BaseModel):
+    session_id: str
+    url: str
+
+
+# Usage schemas
+class ProcessImageResponse(BaseModel):
+    success: bool
+    file_id: str
+    output_url: str
+    download_url: str
+    original_filename: str
+    output_filename: str
+    original_size: int
+    output_size: int
+    format: str
+    has_watermark: bool
+    credits_remaining: Optional[int] = None
+    timestamp: datetime
+
+
+class UsageStats(BaseModel):
+    total_processed: int
+    credits_used_this_month: int
+    credits_remaining: int
+    monthly_credits: int
+    subscription_tier: str
