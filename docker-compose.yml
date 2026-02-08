@@ -1,4 +1,25 @@
 services:
+  db:
+    image: postgres:16-alpine
+    container_name: quicktools-db
+    environment:
+      - POSTGRES_USER=quicktools
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-quicktools_dev_password}
+      - POSTGRES_DB=quicktools
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U quicktools"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    labels:
+      - "com.project=quicktools"
+      - "com.type=database"
+
   web:
     build: .
     container_name: quicktools
@@ -7,17 +28,26 @@ services:
     volumes:
       - ./uploads:/app/uploads
       - ./outputs:/app/outputs
-      - ./quicktools.db:/app/quicktools.db
     environment:
       - PYTHONUNBUFFERED=1
       - JWT_SECRET_KEY=${JWT_SECRET_KEY:-change-this-secret-key}
-      - DATABASE_URL=sqlite:///./quicktools.db
+      - DATABASE_URL=postgresql://quicktools:${DB_PASSWORD:-quicktools_dev_password}@db:5432/quicktools
       - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
       - STRIPE_PRICE_BASIC=${STRIPE_PRICE_BASIC}
       - STRIPE_PRICE_PRO=${STRIPE_PRICE_PRO}
       - STRIPE_PRICE_BUSINESS=${STRIPE_PRICE_BUSINESS}
       - FRONTEND_URL=${FRONTEND_URL:-http://localhost:5000}
+    depends_on:
+      db:
+        condition: service_healthy
     restart: unless-stopped
     labels:
       - "com.project=quicktools"
       - "com.type=api"
+
+volumes:
+  postgres_data:
+    driver: local
+    labels:
+      - "com.project=quicktools"
+      - "com.type=data"

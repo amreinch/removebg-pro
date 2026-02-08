@@ -48,3 +48,4 @@ dist/
 build/
 *.egg-info/
 app_backup_*.py
+static/app_old.js
