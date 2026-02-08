@@ -33,7 +33,7 @@ from api_auth import (
 )
 from schemas import (
     UserCreate, UserLogin, Token, UserResponse,
-    ProcessImageResponse, UsageStats, CheckoutSession
+    ProcessImageResponse, UsageStats, CheckoutSession, CheckoutSessionRequest
 )
 from watermark import add_watermark
 from typing import Union
@@ -357,10 +357,11 @@ async def get_stats(
 
 @app.post("/api/create-checkout-session", response_model=CheckoutSession)
 async def create_checkout_session(
-    tier: str,
+    request: CheckoutSessionRequest,
     current_user: User = Depends(get_current_user)
 ):
     """Create Stripe checkout session for subscription"""
+    tier = request.tier
     if tier not in STRIPE_PRICE_IDS:
         raise HTTPException(status_code=400, detail="Invalid subscription tier")
     

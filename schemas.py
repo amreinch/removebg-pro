@@ -44,6 +44,10 @@ class SubscriptionTier(BaseModel):
     features: list[str]
 
 
+class CheckoutSessionRequest(BaseModel):
+    tier: str = Field(..., pattern="^(basic|pro|business)$")
+
+
 class CheckoutSession(BaseModel):
     session_id: str
     url: str
