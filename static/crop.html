@@ -8,6 +8,98 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/styles.css">
+    <style>
+        .ratio-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: var(--space-2);
+            padding: var(--space-4);
+            background: white;
+            border: 2px solid var(--gray-300);
+            border-radius: var(--radius-lg);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .ratio-btn:hover {
+            border-color: var(--primary);
+            background: var(--blue-50);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+        }
+        
+        .ratio-btn.active {
+            border-color: var(--primary);
+            background: linear-gradient(135deg, var(--blue-50) 0%, var(--purple-50) 100%);
+            box-shadow: 0 4px 16px rgba(59, 130, 246, 0.25);
+        }
+        
+        .ratio-btn.active::before {
+            content: '';
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 20px;
+            height: 20px;
+            background: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .ratio-btn.active::after {
+            content: '✓';
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 20px;
+            height: 20px;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1;
+        }
+        
+        .ratio-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 48px;
+            color: var(--gray-400);
+            transition: color 0.2s ease;
+        }
+        
+        .ratio-btn:hover .ratio-icon {
+            color: var(--primary);
+        }
+        
+        .ratio-btn.active .ratio-icon {
+            color: var(--primary);
+        }
+        
+        .ratio-btn strong {
+            font-size: var(--text-base);
+            color: var(--gray-900);
+            font-weight: 600;
+        }
+        
+        .ratio-label {
+            font-size: var(--text-sm);
+            color: var(--gray-600);
+            font-weight: 500;
+        }
+        
+        .ratio-btn.active .ratio-label {
+            color: var(--primary);
+        }
+    </style>
 </head>
 <body>
     <!-- Navigation -->
@@ -94,7 +186,7 @@
                                 
                                 <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: var(--text-sm); font-weight: 600; text-align: center; background: rgba(0,0,0,0.6); padding: var(--space-2) var(--space-3); border-radius: var(--radius-md); pointer-events: none;">
                                     <div id="cropDimensions">-</div>
-                                    <div style="font-size: var(--text-xs); opacity: 0.8; margin-top: 4px;">🖐️ Drag to move • ↔️ Resize edges</div>
+                                    <div id="cropRatioDisplay" style="font-size: var(--text-xs); opacity: 0.8; margin-top: 4px;">🖐️ Drag to move • ↔️ Resize edges</div>
                                 </div>
                             </div>
                         </div>
@@ -105,29 +197,50 @@
                         
                         <!-- Preset Buttons -->
                         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-3); margin-bottom: var(--space-4);">
-                            <button type="button" class="preset-btn active" data-ratio="1:1">
+                            <button type="button" class="ratio-btn active" data-ratio="1:1">
+                                <div class="ratio-icon">
+                                    <div style="width: 32px; height: 32px; background: currentColor; border-radius: 4px;"></div>
+                                </div>
                                 <strong>Square</strong>
-                                <span style="font-size: var(--text-sm); color: var(--gray-600);">1:1</span>
+                                <span class="ratio-label">1:1</span>
                             </button>
-                            <button type="button" class="preset-btn" data-ratio="16:9">
+                            <button type="button" class="ratio-btn" data-ratio="16:9">
+                                <div class="ratio-icon">
+                                    <div style="width: 40px; height: 24px; background: currentColor; border-radius: 4px;"></div>
+                                </div>
                                 <strong>Landscape</strong>
-                                <span style="font-size: var(--text-sm); color: var(--gray-600);">16:9</span>
+                                <span class="ratio-label">16:9</span>
                             </button>
-                            <button type="button" class="preset-btn" data-ratio="4:3">
+                            <button type="button" class="ratio-btn" data-ratio="4:3">
+                                <div class="ratio-icon">
+                                    <div style="width: 36px; height: 28px; background: currentColor; border-radius: 4px;"></div>
+                                </div>
                                 <strong>Standard</strong>
-                                <span style="font-size: var(--text-sm); color: var(--gray-600);">4:3</span>
+                                <span class="ratio-label">4:3</span>
                             </button>
-                            <button type="button" class="preset-btn" data-ratio="4:5">
+                            <button type="button" class="ratio-btn" data-ratio="4:5">
+                                <div class="ratio-icon">
+                                    <div style="width: 28px; height: 36px; background: currentColor; border-radius: 4px;"></div>
+                                </div>
                                 <strong>Portrait</strong>
-                                <span style="font-size: var(--text-sm); color: var(--gray-600);">4:5</span>
+                                <span class="ratio-label">4:5</span>
                             </button>
-                            <button type="button" class="preset-btn" data-ratio="9:16">
+                            <button type="button" class="ratio-btn" data-ratio="9:16">
+                                <div class="ratio-icon">
+                                    <div style="width: 24px; height: 40px; background: currentColor; border-radius: 4px;"></div>
+                                </div>
                                 <strong>Story</strong>
-                                <span style="font-size: var(--text-sm); color: var(--gray-600);">9:16</span>
+                                <span class="ratio-label">9:16</span>
                             </button>
-                            <button type="button" class="preset-btn" data-ratio="custom">
+                            <button type="button" class="ratio-btn" data-ratio="custom">
+                                <div class="ratio-icon">
+                                    <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" stroke-dasharray="2 2"/>
+                                        <path d="M12 8v8M8 12h8"/>
+                                    </svg>
+                                </div>
                                 <strong>Custom</strong>
-                                <span style="font-size: var(--text-sm); color: var(--gray-600);">WxH</span>
+                                <span class="ratio-label">WxH</span>
                             </button>
                         </div>
 
@@ -429,12 +542,109 @@
                 statusEl.textContent = '✅ Ready to crop';
                 statusEl.style.color = 'var(--success)';
             }
+            
+            // Update ratio display
+            updateRatioDisplay(actualWidth, actualHeight);
+        }
+        
+        function gcd(a, b) {
+            return b === 0 ? a : gcd(b, a % b);
+        }
+        
+        function updateRatioDisplay(width, height) {
+            // Calculate simplified ratio
+            const divisor = gcd(width, height);
+            const ratioW = width / divisor;
+            const ratioH = height / divisor;
+            
+            // Check if matches a preset
+            const ratio = width / height;
+            const presets = {
+                '1:1': 1.0,
+                '16:9': 16/9,
+                '4:3': 4/3,
+                '4:5': 4/5,
+                '9:16': 9/16
+            };
+            
+            let matchesPreset = false;
+            let presetName = '';
+            
+            for (const [name, presetRatio] of Object.entries(presets)) {
+                // Check if ratio matches within 1% tolerance
+                if (Math.abs(ratio - presetRatio) < 0.01) {
+                    matchesPreset = true;
+                    presetName = name;
+                    break;
+                }
+            }
+            
+            const ratioDisplayEl = document.getElementById('cropRatioDisplay');
+            
+            if (matchesPreset) {
+                // Show preset name
+                ratioDisplayEl.textContent = `${presetName} • 🖐️ Drag to move • ↔️ Resize edges`;
+            } else {
+                // Show custom ratio (simplified)
+                if (ratioW <= 50 && ratioH <= 50) {
+                    // Nice simple ratio
+                    ratioDisplayEl.textContent = `${ratioW}:${ratioH} • 🖐️ Drag to move • ↔️ Resize edges`;
+                } else {
+                    // Show decimal ratio
+                    ratioDisplayEl.textContent = `${ratio.toFixed(2)}:1 • 🖐️ Drag to move • ↔️ Resize edges`;
+                }
+            }
+        }
+        
+        function checkAndSwitchToCustom(width, height) {
+            // Only auto-switch during resize, not during initial load or preset clicks
+            if (!isResizing) return;
+            
+            const ratio = width / height;
+            const presets = {
+                '1:1': 1.0,
+                '16:9': 16/9,
+                '4:3': 4/3,
+                '4:5': 4/5,
+                '9:16': 9/16
+            };
+            
+            let matchesPreset = false;
+            let matchingRatio = '';
+            
+            for (const [name, presetRatio] of Object.entries(presets)) {
+                // Check if ratio matches within 1% tolerance
+                if (Math.abs(ratio - presetRatio) < 0.01) {
+                    matchesPreset = true;
+                    matchingRatio = name;
+                    break;
+                }
+            }
+            
+            // If doesn't match any preset, switch to Custom button
+            if (!matchesPreset) {
+                document.querySelectorAll('.ratio-btn').forEach(b => b.classList.remove('active'));
+                document.querySelector('.ratio-btn[data-ratio="custom"]').classList.add('active');
+                selectedRatio = 'custom';
+                
+                // Show custom input and update with current dimensions
+                document.getElementById('customRatioInput').style.display = 'block';
+                document.getElementById('customRatio').value = `${width}x${height}`;
+            } else {
+                // If matches a preset, activate that button
+                document.querySelectorAll('.ratio-btn').forEach(b => b.classList.remove('active'));
+                document.querySelector(`.ratio-btn[data-ratio="${matchingRatio}"]`).classList.add('active');
+                selectedRatio = matchingRatio;
+                
+                // Hide custom input
+                document.getElementById('customRatioInput').style.display = 'none';
+            }
         }
 
         // Preset buttons
-        document.querySelectorAll('.preset-btn').forEach(btn => {
+        document.querySelectorAll('.ratio-btn').forEach(btn => {
             btn.addEventListener('click', () => {
-                document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.ratio-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 selectedRatio = btn.dataset.ratio;
                 
@@ -564,6 +774,10 @@
                 const actualHeight = Math.round(newHeight * scale);
                 document.getElementById('cropDimensions').textContent = `${actualWidth} × ${actualHeight}px`;
                 
+                // Update ratio display and check if matches preset
+                updateRatioDisplay(actualWidth, actualHeight);
+                checkAndSwitchToCustom(actualWidth, actualHeight);
+                
             } else if (isDragging) {
                 const rectWidth = parseInt(rectangle.style.width);
                 const rectHeight = parseInt(rectangle.style.height);
@@ -684,6 +898,10 @@
                 const actualWidth = Math.round(newWidth * scale);
                 const actualHeight = Math.round(newHeight * scale);
                 document.getElementById('cropDimensions').textContent = `${actualWidth} × ${actualHeight}px`;
+                
+                // Update ratio display and check if matches preset
+                updateRatioDisplay(actualWidth, actualHeight);
+                checkAndSwitchToCustom(actualWidth, actualHeight);
                 
             } else if (isDragging) {
                 const rectWidth = parseInt(rectangle.style.width);
@@ -908,8 +1126,8 @@
             document.getElementById('resultsSection').style.display = 'none';
             document.getElementById('uploadSection').style.display = 'block';
             document.getElementById('cropBtn').disabled = true;
-            document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
-            document.querySelector('.preset-btn[data-ratio="1:1"]').classList.add('active');
+            document.querySelectorAll('.ratio-btn').forEach(b => b.classList.remove('active'));
+            document.querySelector('.ratio-btn[data-ratio="1:1"]').classList.add('active');
             cropPreviewImg.src = '';
             
             const statusEl = document.getElementById('cropStatus');
