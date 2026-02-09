@@ -110,14 +110,18 @@ def get_current_active_user(
     return current_user
 
 
-def check_user_credits(user: User):
-    """Check if user has credits available"""
-    # Reset credits if new month
-    if (datetime.utcnow() - user.credits_reset_date).days >= 30:
-        user.reset_monthly_credits()
-    
+def check_user_has_credits(user: User) -> None:
+    """Check if user has credits available (raises exception if not)"""
     if not user.can_process:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"No credits remaining. You have {user.credits_remaining}/{user.monthly_credits} credits this month."
+            detail=f"No credits remaining. You have {user.credits_remaining} credits. Purchase a credit pack to continue."
         )
+
+
+def require_credits(
+    current_user: User = Depends(get_current_user),
+) -> User:
+    """Dependency that checks if user has credits and returns the user"""
+    check_user_has_credits(current_user)
+    return current_user

@@ -61,11 +61,11 @@ async def get_current_user_from_api_key(
             detail="User account not found or inactive"
         )
     
-    # Check if user has API access (Pro or Business tier)
-    if user.subscription_tier not in ["pro", "business"]:
+    # Check if user has API access (unlocked via Pro Pack or higher)
+    if not user.api_access_unlocked:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="API access requires Pro or Business subscription"
+            detail="API access requires Pro Pack ($30) or higher. Visit /#pricing to unlock."
         )
     
     # Update last used timestamp
@@ -77,9 +77,9 @@ async def get_current_user_from_api_key(
 
 
 def check_api_access(user: User):
-    """Check if user has API access (Pro or Business tier)"""
-    if user.subscription_tier not in ["pro", "business"]:
+    """Check if user has API access (unlocked by purchasing Pro Pack or higher)"""
+    if not user.api_access_unlocked:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="API access requires Pro or Business subscription. Upgrade at /pricing"
+            detail="API access requires Pro Pack ($30) or higher. Purchase at /#pricing"
         )

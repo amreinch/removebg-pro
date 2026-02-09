@@ -3,190 +3,156 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>API Keys - RemoveBG Pro</title>
+    <title>API Keys - QuickTools</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/styles.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
-        
-        .container {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            max-width: 900px;
-            padding: 40px;
-            margin: 0 auto;
-        }
-        
-        h1 {
-            margin-bottom: 10px;
-        }
-        
-        .subtitle {
-            color: #666;
-            margin-bottom: 30px;
-        }
-        
-        .notice {
-            background: #f0f4ff;
-            border-left: 4px solid #667eea;
-            padding: 15px;
-            margin-bottom: 30px;
-            border-radius: 5px;
-        }
-        
-        .notice.error {
-            background: #fff5f5;
-            border-left-color: #e53e3e;
-            color: #c53030;
-        }
-        
-        .notice.success {
-            background: #f0fff4;
-            border-left-color: #38a169;
-            color: #2f855a;
-        }
-        
-        .btn {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-        
-        .btn-secondary {
-            background: white;
-            color: #667eea;
-            border: 2px solid #667eea;
-        }
-        
-        .btn-danger {
-            background: #e53e3e;
-            color: white;
-        }
-        
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-        }
-        
-        .form-group input {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 1em;
-        }
-        
-        .api-key-list {
-            margin-top: 30px;
-        }
-        
         .api-key-item {
-            background: #f9fafb;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 15px;
+            background: var(--bg-tertiary);
+            padding: var(--space-5);
+            border-radius: var(--radius-xl);
+            margin-bottom: var(--space-4);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            border: 1px solid var(--gray-200);
         }
         
         .api-key-info h3 {
-            margin-bottom: 5px;
+            margin-bottom: var(--space-2);
+            font-size: var(--text-lg);
+            font-weight: 700;
         }
         
         .api-key-info p {
-            color: #666;
-            font-size: 0.9em;
+            color: var(--gray-600);
+            font-size: var(--text-sm);
+            line-height: 1.6;
         }
         
         .key-prefix {
-            font-family: monospace;
-            background: #e0e0e0;
-            padding: 2px 6px;
-            border-radius: 4px;
+            font-family: var(--font-mono);
+            background: var(--gray-200);
+            padding: var(--space-1) var(--space-2);
+            border-radius: var(--radius-sm);
+            font-size: var(--text-sm);
         }
         
         .code-block {
-            background: #1a202c;
-            color: #68d391;
-            padding: 15px;
-            border-radius: 8px;
-            font-family: monospace;
-            font-size: 0.9em;
+            background: var(--gray-900);
+            color: #68D391;
+            padding: var(--space-4);
+            border-radius: var(--radius-lg);
+            font-family: var(--font-mono);
+            font-size: var(--text-sm);
             overflow-x: auto;
-            margin: 15px 0;
+            margin: var(--space-4) 0;
+            line-height: 1.6;
+        }
+        
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+        
+        .btn-danger:hover:not(:disabled) {
+            background: #DC2626;
+            transform: translateY(-1px);
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🔑 API Keys</h1>
-        <p class="subtitle">Manage your API keys for programmatic access</p>
-        
-        <div id="noticeBox" style="display: none;"></div>
-        
-        <!-- Tier Check -->
-        <div id="tierNotice" style="display: none;" class="notice error">
-            API access requires Pro or Business subscription. <a href="/">Upgrade now</a>
-        </div>
-        
-        <!-- Create API Key Form -->
-        <div id="createForm">
-            <h2>Create New API Key</h2>
-            <form id="keyForm">
-                <div class="form-group">
-                    <label>Key Name</label>
-                    <input type="text" name="name" placeholder="e.g., Production Server" required>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-content">
+                <a href="/static/index.html" class="logo">
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                        <rect width="32" height="32" rx="8" fill="url(#gradient)"/>
+                        <path d="M16 8L24 16L16 24L8 16L16 8Z" fill="white"/>
+                        <defs>
+                            <linearGradient id="gradient" x1="0" y1="0" x2="32" y2="32">
+                                <stop offset="0%" stop-color="#3B82F6"/>
+                                <stop offset="100%" stop-color="#8B5CF6"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                    <span>QuickTools</span>
+                </a>
+                
+                <div class="nav-links">
+                    <a href="/static/index.html#tools" class="nav-link">Tools</a>
+                    <a href="/static/index.html#pricing" class="nav-link">Pricing</a>
+                    <a href="/static/support.html" class="nav-link">Support</a>
+                    <a href="/static/api-keys.html" class="nav-link active">API</a>
                 </div>
-                <button type="submit" class="btn btn-primary">Generate API Key</button>
-            </form>
+                
+                <div class="nav-actions">
+                    <div class="user-menu">
+                        <span class="user-email" id="userEmail"></span>
+                        <span class="user-credits" id="userCredits">-- credits</span>
+                    </div>
+                </div>
+            </div>
         </div>
-        
-        <!-- New Key Display -->
-        <div id="newKeyDisplay" style="display: none;" class="notice success">
-            <h3>✅ API Key Created!</h3>
-            <p><strong>Save this key securely - it will not be shown again!</strong></p>
-            <div class="code-block" id="newKeyValue"></div>
-            <button class="btn btn-secondary" onclick="copyKey()">📋 Copy to Clipboard</button>
-        </div>
-        
-        <!-- API Usage Example -->
-        <div style="margin-top: 30px;">
-            <h3>Usage Example</h3>
-            <div class="code-block">curl -X POST https://yourapp.com/api/v1/remove-background \<br>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="section">
+        <div class="container">
+            <div style="background: var(--bg-primary); border-radius: var(--radius-2xl); padding: var(--space-8); box-shadow: var(--shadow-lg); max-width: 900px; margin: 0 auto;">
+                <h1 class="section-title text-left mb-2">🔑 API Keys</h1>
+                <p class="section-subtitle text-left">Manage your API keys for programmatic access</p>
+                
+                <div id="noticeBox" style="display: none;"></div>
+                
+                <!-- Tier Check -->
+                <div id="tierNotice" style="display: none;" class="message error">
+                    API access requires Pro or Business subscription. <a href="/static/index.html#pricing" style="color: inherit; text-decoration: underline;">Upgrade now</a>
+                </div>
+                
+                <!-- Create API Key Form -->
+                <div id="createForm" style="margin: var(--space-8) 0;">
+                    <h2 style="font-size: var(--text-2xl); font-weight: 700; margin-bottom: var(--space-4);">Create New API Key</h2>
+                    <form id="keyForm">
+                        <div class="form-group">
+                            <label>Key Name</label>
+                            <input type="text" name="name" placeholder="e.g., Production Server" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-large">Generate API Key</button>
+                    </form>
+                </div>
+                
+                <!-- New Key Display -->
+                <div id="newKeyDisplay" style="display: none;" class="message success">
+                    <h3 style="font-size: var(--text-lg); font-weight: 700; margin-bottom: var(--space-2);">✅ API Key Created!</h3>
+                    <p><strong>Save this key securely - it will not be shown again!</strong></p>
+                    <div class="code-block" id="newKeyValue"></div>
+                    <button class="btn btn-secondary" onclick="copyKey()">📋 Copy to Clipboard</button>
+                </div>
+                
+                <!-- API Usage Example -->
+                <div style="margin: var(--space-8) 0;">
+                    <h3 style="font-size: var(--text-xl); font-weight: 700; margin-bottom: var(--space-4);">Usage Example</h3>
+                    <div class="code-block">curl -X POST https://yourapp.com/api/v1/remove-background \<br>
   -H "X-API-Key: rbp_live_xxxxxxxxxx" \<br>
   -F "file=@image.jpg" \<br>
   -F "format=png" \<br>
   -o output.png</div>
-        </div>
-        
-        <!-- API Key List -->
-        <div class="api-key-list">
-            <h2>Your API Keys</h2>
-            <div id="keysList"></div>
+                </div>
+                
+                <!-- API Key List -->
+                <div class="api-key-list" style="margin-top: var(--space-8);">
+                    <h2 style="font-size: var(--text-2xl); font-weight: 700; margin-bottom: var(--space-6);">Your API Keys</h2>
+                    <div id="keysList"></div>
+                </div>
+                
+                <p style="margin-top: var(--space-8); text-align: center;">
+                    <a href="/static/index.html" class="btn btn-text">← Back to Home</a>
+                </p>
+            </div>
         </div>
     </div>
     
@@ -199,7 +165,7 @@
         async function init() {
             const token = localStorage.getItem('token');
             if (!token) {
-                window.location.href = '/';
+                window.location.href = '/static/index.html';
                 return;
             }
             
@@ -208,10 +174,17 @@
                 const response = await fetch(`${API_BASE}/api/auth/me`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
+                
+                if (!response.ok) throw new Error('Auth failed');
+                
                 currentUser = await response.json();
                 
+                // Show user info
+                document.getElementById('userEmail').textContent = currentUser.email;
+                document.getElementById('userCredits').textContent = `${currentUser.credits_balance} credits`;
+                
                 // Check tier
-                if (!['pro', 'business'].includes(currentUser.subscription_tier)) {
+                if (!currentUser.api_access_unlocked) {
                     document.getElementById('tierNotice').style.display = 'block';
                     document.getElementById('createForm').style.display = 'none';
                     return;
@@ -221,7 +194,7 @@
                 await loadKeys();
             } catch (error) {
                 console.error('Init error:', error);
-                window.location.href = '/';
+                window.location.href = '/static/index.html';
             }
         }
         
@@ -235,7 +208,7 @@
             
             const list = document.getElementById('keysList');
             if (data.keys.length === 0) {
-                list.innerHTML = '<p style="color: #666;">No API keys yet. Create one above!</p>';
+                list.innerHTML = '<p style="color: var(--gray-600);">No API keys yet. Create one above!</p>';
                 return;
             }
             
@@ -319,7 +292,7 @@
         // Show notice
         function showNotice(type, message) {
             const box = document.getElementById('noticeBox');
-            box.className = `notice ${type}`;
+            box.className = `message ${type}`;
             box.textContent = message;
             box.style.display = 'block';
             setTimeout(() => box.style.display = 'none', 5000);

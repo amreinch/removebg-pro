@@ -23,13 +23,15 @@ from pathlib import Path
 import os
 from datetime import datetime
 import stripe
+from typing import Union, List
+import math
 
 # Import our modules
 from database import get_db, init_db
 from models import User, UsageRecord, APIKey
 from auth import (
     hash_password, verify_password, create_access_token,
-    get_current_user, check_user_credits
+    get_current_user, require_credits, check_user_has_credits
 )
 from api_auth import (
     generate_api_key, hash_api_key, 
@@ -40,7 +42,6 @@ from schemas import (
     ProcessImageResponse, UsageStats, CheckoutSession, CheckoutSessionRequest
 )
 from watermark import add_watermark
-from typing import Union
 
 # Initialize app
 app = FastAPI(
@@ -60,18 +61,58 @@ app.add_middleware(
 
 # Stripe configuration
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY", "sk_test_placeholder")
-STRIPE_PRICE_IDS = {
-    "basic": os.getenv("STRIPE_PRICE_BASIC", "price_basic"),
-    "pro": os.getenv("STRIPE_PRICE_PRO", "price_pro"),
-    "business": os.getenv("STRIPE_PRICE_BUSINESS", "price_business"),
-}
 
-# Tier configurations - Monthly DOWNLOAD limits
-TIER_CONFIG = {
-    "free": {"downloads": 3},
-    "basic": {"downloads": 50},
-    "pro": {"downloads": 500},
-    "business": {"downloads": 5000},
+# Credit Pack System (replaces subscription tiers)
+CREDIT_PACKS = {
+    "starter": {
+        "name": "Starter Pack",
+        "price": 500,  # $5 in cents
+        "credits": 100,
+        "per_credit": 0.05,
+        "unlocks_api": False,
+        "badge": None,
+        "features": ["Web UI access", "100 tasks", "Community support"]
+    },
+    "standard": {
+        "name": "Standard Pack",
+        "price": 1500,  # $15 in cents
+        "credits": 500,
+        "per_credit": 0.03,
+        "unlocks_api": False,
+        "badge": "⭐ Popular",
+        "features": ["Web UI access", "500 tasks", "Email support (48h)", "40% better value"]
+    },
+    "pro": {
+        "name": "Pro Pack",
+        "price": 3000,  # $30 in cents
+        "credits": 1200,
+        "per_credit": 0.025,
+        "unlocks_api": True,
+        "badge": "💎 Best Value + API",
+        "features": [
+            "Web UI access",
+            "1,200 tasks",
+            "🔑 API Access (lifetime unlock)",
+            "API documentation",
+            "Priority support (24h)",
+            "50% better value"
+        ]
+    },
+    "business": {
+        "name": "Business Pack",
+        "price": 10000,  # $100 in cents
+        "credits": 5000,
+        "per_credit": 0.02,
+        "unlocks_api": True,
+        "badge": None,
+        "features": [
+            "Web UI access",
+            "5,000 tasks",
+            "🔑 API Access (lifetime unlock)",
+            "Dedicated support (12h)",
+            "60% better value"
+        ]
+    }
 }
 
 # Create directories
@@ -142,13 +183,14 @@ async def signup(user_data: UserCreate, db: Session = Depends(get_db)):
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already registered")
     
-    # Create user
+    # Create user with 10 free starter credits
     user = User(
         email=user_data.email,
         hashed_password=hash_password(user_data.password),
         full_name=user_data.full_name,
-        subscription_tier="free",
-        monthly_credits=3,
+        credits_balance=10,  # Free starter credits
+        credits_purchased_total=0,
+        api_access_unlocked=False,
     )
     
     db.add(user)
@@ -312,7 +354,7 @@ async def download_file(
     Requires available credits (deducts 1 credit per download).
     """
     # Check if user has credits
-    check_user_credits(current_user)
+    check_user_has_credits(current_user)
     
     # Find clean file
     for ext in ["png", "jpg", "jpeg", "webp"]:
@@ -348,10 +390,11 @@ async def get_stats(
     
     return UsageStats(
         total_processed=total_processed,
-        credits_used_this_month=current_user.credits_used_this_month,
-        credits_remaining=current_user.credits_remaining,
-        monthly_credits=current_user.monthly_credits,
-        subscription_tier=current_user.subscription_tier
+        credits_balance=current_user.credits_balance,
+        credits_lifetime_used=current_user.credits_lifetime_used,
+        credits_purchased_total=current_user.credits_purchased_total,
+        api_access_unlocked=current_user.api_access_unlocked,
+        support_tier=current_user.support_tier
     )
 
 
@@ -359,15 +402,18 @@ async def get_stats(
 # STRIPE INTEGRATION
 # ============================================================================
 
-@app.post("/api/create-checkout-session", response_model=CheckoutSession)
-async def create_checkout_session(
+@app.post("/api/purchase-credits", response_model=CheckoutSession)
+async def purchase_credits(
     request: CheckoutSessionRequest,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
 ):
-    """Create Stripe checkout session for subscription"""
-    tier = request.tier
-    if tier not in STRIPE_PRICE_IDS:
-        raise HTTPException(status_code=400, detail="Invalid subscription tier")
+    """Create Stripe checkout session for credit pack purchase (one-time payment)"""
+    pack = request.tier  # Reusing 'tier' field for pack name
+    if pack not in CREDIT_PACKS:
+        raise HTTPException(status_code=400, detail="Invalid credit pack")
+    
+    pack_config = CREDIT_PACKS[pack]
     
     try:
         # Create Stripe customer if doesn't exist
@@ -377,18 +423,32 @@ async def create_checkout_session(
                 metadata={"user_id": current_user.id}
             )
             current_user.stripe_customer_id = customer.id
+            db.commit()
         
-        # Create checkout session
+        # Create checkout session for ONE-TIME PAYMENT
         session = stripe.checkout.Session.create(
             customer=current_user.stripe_customer_id,
             payment_method_types=["card"],
             line_items=[{
-                "price": STRIPE_PRICE_IDS[tier],
+                "price_data": {
+                    "currency": "usd",
+                    "product_data": {
+                        "name": pack_config["name"],
+                        "description": f"{pack_config['credits']} credits - Never expire!",
+                    },
+                    "unit_amount": pack_config["price"],
+                },
                 "quantity": 1,
             }],
-            mode="subscription",
-            success_url=os.getenv("FRONTEND_URL", "http://localhost:5000") + "/success?session_id={CHECKOUT_SESSION_ID}",
-            cancel_url=os.getenv("FRONTEND_URL", "http://localhost:5000") + "/pricing",
+            mode="payment",  # ONE-TIME PAYMENT, not subscription!
+            metadata={
+                "pack": pack,
+                "credits": pack_config["credits"],
+                "unlocks_api": str(pack_config["unlocks_api"]),
+                "user_id": current_user.id
+            },
+            success_url=os.getenv("FRONTEND_URL", "http://localhost:5000") + "/success?credits=" + str(pack_config["credits"]),
+            cancel_url=os.getenv("FRONTEND_URL", "http://localhost:5000") + "/#pricing",
         )
         
         return CheckoutSession(session_id=session.id, url=session.url)
@@ -399,44 +459,30 @@ async def create_checkout_session(
 
 @app.post("/api/webhook/stripe")
 async def stripe_webhook(request: dict, db: Session = Depends(get_db)):
-    """Handle Stripe webhooks"""
-    # In production, verify signature
+    """Handle Stripe webhooks for credit pack purchases"""
+    # In production, verify signature with:
+    # sig_header = request.headers.get('stripe-signature')
+    # event = stripe.Webhook.construct_event(payload, sig_header, webhook_secret)
+    
     event_type = request.get("type")
     
     if event_type == "checkout.session.completed":
         session = request.get("data", {}).get("object", {})
-        customer_id = session.get("customer")
-        subscription_id = session.get("subscription")
         
-        # Update user subscription
-        user = db.query(User).filter(User.stripe_customer_id == customer_id).first()
-        if user:
-            user.stripe_subscription_id = subscription_id
-            user.subscription_status = "active"
-            
-            # Determine tier from price_id
-            subscription = stripe.Subscription.retrieve(subscription_id)
-            price_id = subscription["items"]["data"][0]["price"]["id"]
-            
-            for tier, pid in STRIPE_PRICE_IDS.items():
-                if pid == price_id:
-                    user.subscription_tier = tier
-                    user.monthly_credits = TIER_CONFIG[tier]["downloads"]
-                    break
-            
-            db.commit()
-    
-    elif event_type == "customer.subscription.deleted":
-        subscription = request.get("data", {}).get("object", {})
-        customer_id = subscription.get("customer")
+        # Get metadata from session
+        metadata = session.get("metadata", {})
+        user_id = metadata.get("user_id")
+        credits = int(metadata.get("credits", 0))
+        unlocks_api = metadata.get("unlocks_api") == "True"
         
-        # Downgrade user to free
-        user = db.query(User).filter(User.stripe_customer_id == customer_id).first()
-        if user:
-            user.subscription_tier = "free"
-            user.subscription_status = "cancelled"
-            user.monthly_credits = 3
-            db.commit()
+        if user_id and credits > 0:
+            user = db.query(User).filter(User.id == user_id).first()
+            if user:
+                # Add credits to user balance
+                user.add_credits(credits, unlocks_api=unlocks_api)
+                db.commit()
+                
+                print(f"✅ Added {credits} credits to user {user.email}, API unlocked: {unlocks_api}")
     
     return {"status": "success"}
 
@@ -449,7 +495,14 @@ async def stripe_webhook(request: dict, db: Session = Depends(get_db)):
 async def list_users(db: Session = Depends(get_db)):
     """List all users (admin only - add auth later)"""
     users = db.query(User).all()
-    return [{"id": u.id, "email": u.email, "tier": u.subscription_tier} for u in users]
+    return [{
+        "id": u.id,
+        "email": u.email,
+        "credits_balance": u.credits_balance,
+        "credits_purchased_total": u.credits_purchased_total,
+        "api_access_unlocked": u.api_access_unlocked,
+        "support_tier": u.support_tier
+    } for u in users]
 
 
 # ============================================================================
@@ -568,7 +621,7 @@ async def api_remove_background(
     Returns clean image directly (no watermark, costs 1 credit)
     """
     # Check credits
-    check_user_credits(current_user)
+    check_user_has_credits(current_user)
     
     # Validate file type
     allowed_types = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
@@ -648,6 +701,959 @@ async def api_remove_background(
 
 
 # ============================================================================
+# QR CODE GENERATOR
+# ============================================================================
+
+from tools import generate_qr_code, resize_image, bulk_resize_images, merge_pdfs, split_pdf, compress_pdf
+
+@app.post("/api/qr-code/generate")
+async def generate_qr(
+    data: str = Form(...),
+    size: int = Form(300),
+    error_correction: str = Form("M"),
+    current_user: User = Depends(require_credits),
+    db: Session = Depends(get_db)
+):
+    """
+    Generate a QR code (costs 1 credit)
+    
+    Args:
+        data: Text or URL to encode
+        size: Size in pixels (default 300)
+        error_correction: L, M, Q, H (default M)
+    """
+    try:
+        start_time = datetime.utcnow()
+        
+        # Generate QR code
+        qr_bytes = generate_qr_code(data, size=size, error_correction=error_correction)
+        
+        # Generate unique ID
+        file_id = str(uuid.uuid4())
+        output_filename = f"{file_id}_qrcode.png"
+        output_path = OUTPUT_DIR / output_filename
+        
+        # Save file
+        with open(output_path, "wb") as f:
+            f.write(qr_bytes)
+        
+        # Deduct credit
+        current_user.use_credit()
+        
+        # Record usage
+        processing_time = int((datetime.utcnow() - start_time).total_seconds() * 1000)
+        usage_record = UsageRecord(
+            user_id=current_user.id,
+            original_filename=f"qr_{data[:30]}",
+            file_id=file_id,
+            output_format="png",
+            original_size=len(data),
+            output_size=len(qr_bytes),
+            processing_time=processing_time
+        )
+        db.add(usage_record)
+        db.commit()
+        
+        return {
+            "success": True,
+            "file_id": file_id,
+            "download_url": f"/outputs/{output_filename}",
+            "credits_remaining": current_user.credits_remaining,
+            "timestamp": datetime.utcnow()
+        }
+        
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"QR generation error: {str(e)}")
+
+
+# ============================================================================
+# IMAGE RESIZE
+# ============================================================================
+
+@app.post("/api/resize/single")
+async def resize_single_image(
+    file: UploadFile = File(...),
+    width: int = Form(None),
+    height: int = Form(None),
+    format: str = Form("png"),
+    maintain_aspect: str = Form("true"),
+    current_user: User = Depends(require_credits),
+    db: Session = Depends(get_db)
+):
+    """
+    Resize a single image (costs 1 credit)
+    """
+    # Validate file type
+    allowed_types = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
+    if file.content_type not in allowed_types:
+        raise HTTPException(status_code=400, detail="Invalid file type")
+    
+    contents = await file.read()
+    
+    if len(contents) > 10 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="File too large. Max 10MB")
+    
+    # Convert string to boolean
+    maintain_aspect_bool = maintain_aspect.lower() == "true"
+    
+    try:
+        start_time = datetime.utcnow()
+        
+        # Resize image
+        resized_bytes = resize_image(contents, width=width, height=height, maintain_aspect=maintain_aspect_bool, format=format)
+        
+        # Save file
+        file_id = str(uuid.uuid4())
+        ext = format.lower() if format.lower() != "jpeg" else "jpg"
+        output_filename = f"{file_id}_resized.{ext}"
+        output_path = OUTPUT_DIR / output_filename
+        
+        with open(output_path, "wb") as f:
+            f.write(resized_bytes)
+        
+        # Deduct credit
+        current_user.use_credit()
+        
+        # Record usage
+        processing_time = int((datetime.utcnow() - start_time).total_seconds() * 1000)
+        usage_record = UsageRecord(
+            user_id=current_user.id,
+            original_filename=file.filename,
+            file_id=file_id,
+            output_format=format,
+            original_size=len(contents),
+            output_size=len(resized_bytes),
+            processing_time=processing_time
+        )
+        db.add(usage_record)
+        db.commit()
+        
+        return {
+            "success": True,
+            "file_id": file_id,
+            "download_url": f"/outputs/{output_filename}",
+            "original_size": len(contents),
+            "output_size": len(resized_bytes),
+            "credits_remaining": current_user.credits_remaining,
+            "timestamp": datetime.utcnow()
+        }
+        
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Resize error: {str(e)}")
+
+
+# ============================================================================
+# IMAGE FORMAT CONVERTER
+# ============================================================================
+
+@app.post("/api/convert/format")
+async def convert_image_format(
+    file: UploadFile = File(...),
+    to_format: str = Form(...),
+    quality: int = Form(100),
+    current_user: User = Depends(require_credits),
+    db: Session = Depends(get_db)
+):
+    """
+    Convert image between formats (costs 1 credit)
+    
+    Args:
+        to_format: Target format (png, jpg, webp, bmp, tiff)
+        quality: Output quality 1-100 (for lossy formats like JPG/WebP only)
+    """
+    # Validate file type
+    allowed_types = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/bmp", "image/tiff", "image/heic"]
+    if file.content_type not in allowed_types:
+        raise HTTPException(status_code=400, detail="Invalid image format")
+    
+    # Validate target format
+    to_format = to_format.lower()
+    valid_formats = ["png", "jpg", "jpeg", "webp", "bmp", "tiff"]
+    if to_format not in valid_formats:
+        raise HTTPException(status_code=400, detail=f"Invalid target format. Allowed: {', '.join(valid_formats)}")
+    
+    contents = await file.read()
+    
+    if len(contents) > 20 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="File too large. Max 20MB")
+    
+    try:
+        start_time = datetime.utcnow()
+        
+        # Open image
+        input_image = Image.open(io.BytesIO(contents))
+        
+        # Convert RGBA to RGB if saving as JPEG
+        if to_format in ["jpg", "jpeg"] and input_image.mode in ["RGBA", "LA", "P"]:
+            # Create white background
+            rgb_image = Image.new("RGB", input_image.size, (255, 255, 255))
+            if input_image.mode == "P":
+                input_image = input_image.convert("RGBA")
+            rgb_image.paste(input_image, mask=input_image.split()[-1] if input_image.mode in ["RGBA", "LA"] else None)
+            input_image = rgb_image
+        
+        # Save in new format
+        output_buffer = io.BytesIO()
+        save_format = "JPEG" if to_format in ["jpg", "jpeg"] else to_format.upper()
+        
+        # Quality settings
+        save_kwargs = {}
+        if to_format in ["jpg", "jpeg", "webp"]:
+            save_kwargs["quality"] = min(max(quality, 1), 100)
+            save_kwargs["optimize"] = True
+        elif to_format == "png":
+            save_kwargs["optimize"] = True
+        
+        input_image.save(output_buffer, format=save_format, **save_kwargs)
+        output_bytes = output_buffer.getvalue()
+        
+        # Save file
+        file_id = str(uuid.uuid4())
+        ext = "jpg" if to_format == "jpeg" else to_format
+        original_name = Path(file.filename).stem
+        output_filename = f"{original_name}_converted_{file_id[:8]}.{ext}"
+        output_path = OUTPUT_DIR / output_filename
+        
+        with open(output_path, "wb") as f:
+            f.write(output_bytes)
+        
+        # Deduct credit
+        current_user.use_credit()
+        
+        # Record usage
+        processing_time = int((datetime.utcnow() - start_time).total_seconds() * 1000)
+        usage_record = UsageRecord(
+            user_id=current_user.id,
+            original_filename=file.filename,
+            file_id=file_id,
+            output_format=to_format,
+            original_size=len(contents),
+            output_size=len(output_bytes),
+            processing_time=processing_time
+        )
+        db.add(usage_record)
+        db.commit()
+        
+        return {
+            "success": True,
+            "file_id": file_id,
+            "download_url": f"/outputs/{output_filename}",
+            "original_format": file.content_type.split("/")[-1],
+            "output_format": ext,
+            "original_size": len(contents),
+            "output_size": len(output_bytes),
+            "size_change_percent": round((len(output_bytes) - len(contents)) / len(contents) * 100, 1),
+            "credits_remaining": current_user.credits_remaining,
+            "timestamp": datetime.utcnow()
+        }
+        
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Conversion error: {str(e)}")
+
+
+# ============================================================================
+# IMAGE COMPRESSION
+# ============================================================================
+
+@app.post("/api/compress/image")
+async def compress_image(
+    file: UploadFile = File(...),
+    quality: int = Form(85),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Compress image - Preview FREE, download costs 1 credit
+    
+    Args:
+        quality: Compression quality 1-100 (default 85 = good balance)
+    
+    Returns preview with watermark. Use /api/download/{file_id} to get clean version.
+    """
+    # Validate file type
+    allowed_types = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
+    if file.content_type not in allowed_types:
+        raise HTTPException(status_code=400, detail="Invalid image format. Supported: JPG, PNG, WebP")
+    
+    contents = await file.read()
+    
+    if len(contents) > 20 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="File too large. Max 20MB")
+    
+    try:
+        start_time = datetime.utcnow()
+        
+        # Open image
+        input_image = Image.open(io.BytesIO(contents))
+        original_format = input_image.format or "JPEG"
+        
+        # Determine output format (keep original)
+        if original_format.upper() in ["JPEG", "JPG"]:
+            output_format = "JPEG"
+            ext = "jpg"
+        elif original_format.upper() == "PNG":
+            output_format = "PNG"
+            ext = "png"
+        elif original_format.upper() == "WEBP":
+            output_format = "WEBP"
+            ext = "webp"
+        else:
+            output_format = "JPEG"
+            ext = "jpg"
+        
+        # Convert RGBA to RGB if needed for JPEG
+        if output_format == "JPEG" and input_image.mode in ["RGBA", "LA", "P"]:
+            rgb_image = Image.new("RGB", input_image.size, (255, 255, 255))
+            if input_image.mode == "P":
+                input_image = input_image.convert("RGBA")
+            rgb_image.paste(input_image, mask=input_image.split()[-1] if input_image.mode in ["RGBA", "LA"] else None)
+            input_image = rgb_image
+        
+        # Compress with quality settings
+        output_buffer = io.BytesIO()
+        save_kwargs = {
+            "optimize": True,
+            "quality": min(max(quality, 1), 100)
+        }
+        
+        # PNG-specific optimization
+        if output_format == "PNG":
+            # For PNG, quality doesn't apply but we can optimize
+            # Lower quality means more aggressive optimization
+            save_kwargs.pop("quality")
+            save_kwargs["compress_level"] = 9  # Maximum compression
+        
+        input_image.save(output_buffer, format=output_format, **save_kwargs)
+        output_bytes = output_buffer.getvalue()
+        
+        # Generate file ID
+        file_id = str(uuid.uuid4())
+        original_name = Path(file.filename).stem
+        
+        # Save CLEAN version (for download later)
+        clean_filename = f"{file_id}_clean.{ext}"
+        clean_path = OUTPUT_DIR / clean_filename
+        with open(clean_path, "wb") as f:
+            f.write(output_bytes)
+        
+        # Create PREVIEW version (with watermark)
+        compressed_image = Image.open(io.BytesIO(output_bytes))
+        watermarked_image = add_watermark(compressed_image)
+        
+        # Convert RGBA back to RGB for JPEG (watermark adds alpha channel)
+        if output_format == "JPEG" and watermarked_image.mode == "RGBA":
+            rgb_image = Image.new("RGB", watermarked_image.size, (255, 255, 255))
+            rgb_image.paste(watermarked_image, mask=watermarked_image.split()[-1])
+            watermarked_image = rgb_image
+        
+        preview_filename = f"{file_id}_preview.{ext}"
+        preview_path = OUTPUT_DIR / preview_filename
+        watermarked_image.save(preview_path, format=output_format, **save_kwargs)
+        
+        # Calculate savings
+        size_reduction = len(contents) - len(output_bytes)
+        reduction_percent = round((size_reduction / len(contents)) * 100, 1)
+        
+        # NO credit deduction yet - only on download!
+        
+        return {
+            "success": True,
+            "file_id": file_id,
+            "preview_url": f"/outputs/{preview_filename}",
+            "download_url": f"/api/download/{file_id}",
+            "original_size": len(contents),
+            "compressed_size": len(output_bytes),
+            "size_reduction": size_reduction,
+            "reduction_percent": reduction_percent,
+            "credits_remaining": current_user.credits_remaining,
+            "timestamp": datetime.utcnow()
+        }
+        
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Compression error: {str(e)}")
+
+
+@app.post("/api/watermark/add")
+async def add_custom_watermark(
+    file: UploadFile = File(...),
+    text: str = Form(...),
+    position: str = Form("tiled"),
+    opacity: int = Form(60),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Add custom watermark to image - Preview FREE, download costs 1 credit
+    
+    Args:
+        text: Watermark text (e.g., "© 2026 Your Name")
+        position: tiled, bottom-right, bottom-left, top-right, top-left, center
+        opacity: 1-100 (default 60 = semi-transparent)
+    
+    Returns preview with your watermark. Use /api/download/{file_id} to get full version.
+    """
+    # Validate file type
+    allowed_types = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
+    if file.content_type not in allowed_types:
+        raise HTTPException(status_code=400, detail="Invalid image format. Supported: JPG, PNG, WebP")
+    
+    contents = await file.read()
+    
+    if len(contents) > 20 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="File too large. Max 20MB")
+    
+    if not text or len(text.strip()) == 0:
+        raise HTTPException(status_code=400, detail="Watermark text is required")
+    
+    if len(text) > 100:
+        raise HTTPException(status_code=400, detail="Watermark text too long (max 100 characters)")
+    
+    # Validate opacity
+    opacity = min(max(opacity, 1), 100)
+    
+    try:
+        start_time = datetime.utcnow()
+        
+        # Open image
+        input_image = Image.open(io.BytesIO(contents))
+        original_format = input_image.format or "PNG"
+        
+        # Convert to RGBA for watermarking
+        if input_image.mode != 'RGBA':
+            input_image = input_image.convert('RGBA')
+        
+        # Apply custom watermark based on position
+        watermarked_image = apply_custom_watermark(
+            input_image, 
+            text, 
+            position, 
+            opacity
+        )
+        
+        # Determine output format
+        if original_format.upper() in ["JPEG", "JPG"]:
+            output_format = "JPEG"
+            ext = "jpg"
+            # Convert to RGB for JPEG
+            rgb_image = Image.new("RGB", watermarked_image.size, (255, 255, 255))
+            rgb_image.paste(watermarked_image, mask=watermarked_image.split()[-1])
+            watermarked_image = rgb_image
+        elif original_format.upper() == "PNG":
+            output_format = "PNG"
+            ext = "png"
+        elif original_format.upper() == "WEBP":
+            output_format = "WEBP"
+            ext = "webp"
+        else:
+            output_format = "PNG"
+            ext = "png"
+        
+        # Save watermarked version
+        output_buffer = io.BytesIO()
+        save_kwargs = {"optimize": True}
+        if output_format == "JPEG":
+            save_kwargs["quality"] = 95
+        
+        watermarked_image.save(output_buffer, format=output_format, **save_kwargs)
+        output_bytes = output_buffer.getvalue()
+        
+        # Generate file ID
+        file_id = str(uuid.uuid4())
+        original_name = Path(file.filename).stem
+        
+        # Save CLEAN version (full quality watermarked - for download)
+        clean_filename = f"{file_id}_clean.{ext}"
+        clean_path = OUTPUT_DIR / clean_filename
+        with open(clean_path, "wb") as f:
+            f.write(output_bytes)
+        
+        # Create PREVIEW version (lower quality + preview watermark)
+        preview_watermarked = add_watermark(watermarked_image, "PREVIEW")
+        
+        preview_filename = f"{file_id}_preview.{ext}"
+        preview_path = OUTPUT_DIR / preview_filename
+        
+        # Convert to RGB if needed for JPEG preview
+        if output_format == "JPEG" and preview_watermarked.mode == "RGBA":
+            rgb_preview = Image.new("RGB", preview_watermarked.size, (255, 255, 255))
+            rgb_preview.paste(preview_watermarked, mask=preview_watermarked.split()[-1])
+            preview_watermarked = rgb_preview
+        
+        preview_watermarked.save(preview_path, format=output_format, quality=85 if output_format == "JPEG" else None)
+        
+        # NO credit deduction yet - only on download!
+        
+        return {
+            "success": True,
+            "file_id": file_id,
+            "preview_url": f"/outputs/{preview_filename}",
+            "download_url": f"/api/download/{file_id}",
+            "original_size": len(contents),
+            "watermarked_size": len(output_bytes),
+            "watermark_text": text,
+            "position": position,
+            "credits_remaining": current_user.credits_balance,
+            "timestamp": datetime.utcnow()
+        }
+        
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Watermark error: {str(e)}")
+
+
+def apply_custom_watermark(image: Image.Image, text: str, position: str, opacity: int) -> Image.Image:
+    """
+    Apply custom watermark to image
+    
+    Args:
+        image: PIL Image (RGBA mode)
+        text: Watermark text
+        position: tiled, bottom-right, bottom-left, top-right, top-left, center
+        opacity: 1-100
+    
+    Returns:
+        Watermarked PIL Image (RGBA)
+    """
+    from PIL import ImageDraw, ImageFont
+    import math
+    
+    watermarked = image.copy()
+    overlay = Image.new('RGBA', watermarked.size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(overlay)
+    
+    width, height = watermarked.size
+    font_size = max(int(min(width, height) / 20), 24)
+    
+    try:
+        font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", font_size)
+    except:
+        font = ImageFont.load_default()
+    
+    # Calculate text size
+    bbox = draw.textbbox((0, 0), text, font=font)
+    text_width = bbox[2] - bbox[0]
+    text_height = bbox[3] - bbox[1]
+    
+    # Calculate opacity (0-255)
+    alpha = int((opacity / 100) * 255)
+    
+    if position == "tiled":
+        # Tile watermark across ENTIRE image (diagonal pattern)
+        x_spacing = text_width * 2
+        y_spacing = text_height * 3
+        
+        # Need extra tiles to cover image after rotation (diagonal adds area)
+        diagonal = math.sqrt(width**2 + height**2)
+        x_count = int(diagonal / x_spacing) + 2
+        y_count = int(diagonal / y_spacing) + 2
+        
+        # Start from negative to ensure full coverage after rotation
+        x_start = -int(diagonal / 4)
+        y_start = -int(diagonal / 4)
+        
+        # Draw grid that covers entire image + margins for rotation
+        for i in range(x_count):
+            for j in range(y_count):
+                x = x_start + (i * x_spacing)
+                y = y_start + (j * y_spacing)
+                draw.text(
+                    (x, y), text, font=font,
+                    fill=(255, 255, 255, alpha),
+                    stroke_width=2,
+                    stroke_fill=(0, 0, 0, int(alpha * 0.7))
+                )
+        
+        # Rotate for diagonal effect (around center)
+        overlay = overlay.rotate(-25, expand=False, resample=Image.Resampling.BICUBIC)
+    
+    else:
+        # Corner/center positioning
+        padding = 30
+        
+        if position == "bottom-right":
+            x = width - text_width - padding
+            y = height - text_height - padding
+        elif position == "bottom-left":
+            x = padding
+            y = height - text_height - padding
+        elif position == "top-right":
+            x = width - text_width - padding
+            y = padding
+        elif position == "top-left":
+            x = padding
+            y = padding
+        elif position == "center":
+            x = (width - text_width) // 2
+            y = (height - text_height) // 2
+        else:
+            x = width - text_width - padding
+            y = height - text_height - padding
+        
+        # Draw with shadow
+        shadow_offset = 3
+        draw.text(
+            (x + shadow_offset, y + shadow_offset), text, font=font,
+            fill=(0, 0, 0, int(alpha * 0.6))
+        )
+        draw.text((x, y), text, font=font, fill=(255, 255, 255, alpha))
+    
+    # Composite watermark onto image
+    watermarked = Image.alpha_composite(watermarked, overlay)
+    
+    return watermarked
+
+
+@app.post("/api/crop/image")
+async def crop_image(
+    file: UploadFile = File(...),
+    x: int = Form(...),
+    y: int = Form(...),
+    width: int = Form(...),
+    height: int = Form(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Crop image with custom coordinates - Preview FREE, download costs 1 credit
+    
+    Args:
+        x: Left coordinate (pixels)
+        y: Top coordinate (pixels)
+        width: Crop width (pixels)
+        height: Crop height (pixels)
+    
+    Returns preview with watermark. Use /api/download/{file_id} to get clean version.
+    """
+    # Validate file type
+    allowed_types = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
+    if file.content_type not in allowed_types:
+        raise HTTPException(status_code=400, detail="Invalid image format. Supported: JPG, PNG, WebP")
+    
+    contents = await file.read()
+    
+    if len(contents) > 20 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="File too large. Max 20MB")
+    
+    try:
+        start_time = datetime.utcnow()
+        
+        # Open image
+        input_image = Image.open(io.BytesIO(contents))
+        original_format = input_image.format or "JPEG"
+        original_width, original_height = input_image.size
+        
+        # Validate crop coordinates
+        if x < 0 or y < 0 or width <= 0 or height <= 0:
+            raise HTTPException(status_code=400, detail="Invalid crop coordinates")
+        
+        if x + width > original_width or y + height > original_height:
+            raise HTTPException(status_code=400, detail="Crop area exceeds image bounds")
+        
+        # Crop image using provided coordinates
+        cropped_image = input_image.crop((x, y, x + width, y + height))
+        
+        # Determine output format
+        if original_format.upper() in ["JPEG", "JPG"]:
+            output_format = "JPEG"
+            ext = "jpg"
+        elif original_format.upper() == "PNG":
+            output_format = "PNG"
+            ext = "png"
+        elif original_format.upper() == "WEBP":
+            output_format = "WEBP"
+            ext = "webp"
+        else:
+            output_format = "JPEG"
+            ext = "jpg"
+        
+        # Convert RGBA to RGB for JPEG
+        if output_format == "JPEG" and cropped_image.mode in ["RGBA", "LA", "P"]:
+            rgb_image = Image.new("RGB", cropped_image.size, (255, 255, 255))
+            if cropped_image.mode == "P":
+                cropped_image = cropped_image.convert("RGBA")
+            rgb_image.paste(cropped_image, mask=cropped_image.split()[-1] if cropped_image.mode in ["RGBA", "LA"] else None)
+            cropped_image = rgb_image
+        
+        # Save CLEAN version
+        clean_buffer = io.BytesIO()
+        save_kwargs = {"optimize": True}
+        if output_format == "JPEG":
+            save_kwargs["quality"] = 95
+        
+        cropped_image.save(clean_buffer, format=output_format, **save_kwargs)
+        clean_bytes = clean_buffer.getvalue()
+        
+        # Generate file ID
+        file_id = str(uuid.uuid4())
+        original_name = Path(file.filename).stem
+        
+        # Save CLEAN cropped version (for download)
+        clean_filename = f"{file_id}_clean.{ext}"
+        clean_path = OUTPUT_DIR / clean_filename
+        with open(clean_path, "wb") as f:
+            f.write(clean_bytes)
+        
+        # Create PREVIEW version (with watermark)
+        if cropped_image.mode != 'RGBA':
+            cropped_image = cropped_image.convert('RGBA')
+        
+        watermarked_image = add_watermark(cropped_image, "PREVIEW")
+        
+        # Convert back to RGB if needed for JPEG
+        if output_format == "JPEG" and watermarked_image.mode == "RGBA":
+            rgb_preview = Image.new("RGB", watermarked_image.size, (255, 255, 255))
+            rgb_preview.paste(watermarked_image, mask=watermarked_image.split()[-1])
+            watermarked_image = rgb_preview
+        
+        preview_filename = f"{file_id}_preview.{ext}"
+        preview_path = OUTPUT_DIR / preview_filename
+        watermarked_image.save(preview_path, format=output_format, quality=85 if output_format == "JPEG" else None)
+        
+        # NO credit deduction yet - only on download!
+        
+        # Calculate aspect ratio for display
+        aspect_ratio = f"{width}:{height}"
+        gcd_val = math.gcd(width, height)
+        if gcd_val > 1:
+            aspect_ratio = f"{width//gcd_val}:{height//gcd_val}"
+        
+        return {
+            "success": True,
+            "file_id": file_id,
+            "preview_url": f"/outputs/{preview_filename}",
+            "download_url": f"/api/download/{file_id}",
+            "original_size": f"{original_width}x{original_height}",
+            "cropped_size": f"{width}x{height}",
+            "aspect_ratio": aspect_ratio,
+            "credits_remaining": current_user.credits_balance,
+            "timestamp": datetime.utcnow()
+        }
+        
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Crop error: {str(e)}")
+
+
+# ============================================================================
+# PDF TOOLS
+# ============================================================================
+
+@app.post("/api/pdf/merge")
+async def merge_pdf_files(
+    files: List[UploadFile] = File(...),
+    current_user: User = Depends(require_credits),
+    db: Session = Depends(get_db)
+):
+    """
+    Merge multiple PDF files (costs 1 credit)
+    """
+    if len(files) < 2:
+        raise HTTPException(status_code=400, detail="Need at least 2 PDFs to merge")
+    
+    pdf_bytes_list = []
+    
+    for file in files:
+        if file.content_type != "application/pdf":
+            raise HTTPException(status_code=400, detail=f"File {file.filename} is not a PDF")
+        
+        contents = await file.read()
+        
+        if len(contents) > 20 * 1024 * 1024:
+            raise HTTPException(status_code=400, detail="PDF too large. Max 20MB per file")
+        
+        pdf_bytes_list.append(contents)
+    
+    try:
+        start_time = datetime.utcnow()
+        
+        # Merge PDFs
+        merged_bytes = merge_pdfs(pdf_bytes_list)
+        
+        # Save file
+        file_id = str(uuid.uuid4())
+        output_filename = f"{file_id}_merged.pdf"
+        output_path = OUTPUT_DIR / output_filename
+        
+        with open(output_path, "wb") as f:
+            f.write(merged_bytes)
+        
+        # Deduct credit
+        current_user.use_credit()
+        
+        # Record usage
+        processing_time = int((datetime.utcnow() - start_time).total_seconds() * 1000)
+        usage_record = UsageRecord(
+            user_id=current_user.id,
+            original_filename=f"merge_{len(files)}_pdfs",
+            file_id=file_id,
+            output_format="pdf",
+            original_size=sum(len(b) for b in pdf_bytes_list),
+            output_size=len(merged_bytes),
+            processing_time=processing_time
+        )
+        db.add(usage_record)
+        db.commit()
+        
+        return {
+            "success": True,
+            "file_id": file_id,
+            "download_url": f"/outputs/{output_filename}",
+            "files_merged": len(files),
+            "output_size": len(merged_bytes),
+            "credits_remaining": current_user.credits_remaining,
+            "timestamp": datetime.utcnow()
+        }
+        
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"PDF merge error: {str(e)}")
+
+
+@app.post("/api/pdf/split")
+async def split_pdf_file(
+    file: UploadFile = File(...),
+    pages: str = Form("all"),
+    current_user: User = Depends(require_credits),
+    db: Session = Depends(get_db)
+):
+    """
+    Split a PDF into separate pages (costs 1 credit)
+    
+    Args:
+        pages: "all" or "1-3,5,7-9" for specific pages/ranges
+    """
+    if file.content_type != "application/pdf":
+        raise HTTPException(status_code=400, detail="File must be a PDF")
+    
+    contents = await file.read()
+    
+    if len(contents) > 20 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="PDF too large. Max 20MB")
+    
+    try:
+        start_time = datetime.utcnow()
+        
+        # Split PDF
+        split_pdfs = split_pdf(contents, pages=pages)
+        
+        # Save files with original filename base
+        file_id = str(uuid.uuid4())
+        download_urls = []
+        
+        # Get original filename without extension
+        original_name = Path(file.filename).stem
+        
+        for idx, pdf_bytes in enumerate(split_pdfs, 1):
+            output_filename = f"{original_name}_page{idx}_{file_id[:8]}.pdf"
+            output_path = OUTPUT_DIR / output_filename
+            
+            with open(output_path, "wb") as f:
+                f.write(pdf_bytes)
+            
+            download_urls.append(f"/outputs/{output_filename}")
+        
+        # Deduct credit
+        current_user.use_credit()
+        
+        # Record usage
+        processing_time = int((datetime.utcnow() - start_time).total_seconds() * 1000)
+        usage_record = UsageRecord(
+            user_id=current_user.id,
+            original_filename=file.filename,
+            file_id=file_id,
+            output_format="pdf",
+            original_size=len(contents),
+            output_size=sum(len(p) for p in split_pdfs),
+            processing_time=processing_time
+        )
+        db.add(usage_record)
+        db.commit()
+        
+        return {
+            "success": True,
+            "file_id": file_id,
+            "download_urls": download_urls,
+            "pages_count": len(split_pdfs),
+            "credits_remaining": current_user.credits_remaining,
+            "timestamp": datetime.utcnow()
+        }
+        
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"PDF split error: {str(e)}")
+
+
+@app.post("/api/pdf/compress")
+async def compress_pdf_file(
+    file: UploadFile = File(...),
+    current_user: User = Depends(require_credits),
+    db: Session = Depends(get_db)
+):
+    """
+    Compress a PDF file (costs 1 credit)
+    """
+    if file.content_type != "application/pdf":
+        raise HTTPException(status_code=400, detail="File must be a PDF")
+    
+    contents = await file.read()
+    
+    if len(contents) > 20 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="PDF too large. Max 20MB")
+    
+    try:
+        start_time = datetime.utcnow()
+        
+        # Compress PDF
+        compressed_bytes = compress_pdf(contents)
+        
+        # Save file
+        file_id = str(uuid.uuid4())
+        output_filename = f"{file_id}_compressed.pdf"
+        output_path = OUTPUT_DIR / output_filename
+        
+        with open(output_path, "wb") as f:
+            f.write(compressed_bytes)
+        
+        # Deduct credit
+        current_user.use_credit()
+        
+        # Record usage
+        processing_time = int((datetime.utcnow() - start_time).total_seconds() * 1000)
+        compression_ratio = (1 - len(compressed_bytes) / len(contents)) * 100
+        
+        usage_record = UsageRecord(
+            user_id=current_user.id,
+            original_filename=file.filename,
+            file_id=file_id,
+            output_format="pdf",
+            original_size=len(contents),
+            output_size=len(compressed_bytes),
+            processing_time=processing_time
+        )
+        db.add(usage_record)
+        db.commit()
+        
+        return {
+            "success": True,
+            "file_id": file_id,
+            "download_url": f"/outputs/{output_filename}",
+            "original_size": len(contents),
+            "compressed_size": len(compressed_bytes),
+            "compression_ratio": f"{compression_ratio:.1f}%",
+            "credits_remaining": current_user.credits_remaining,
+            "timestamp": datetime.utcnow()
+        }
+        
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"PDF compression error: {str(e)}")
+
+
+# ============================================================================
 # SUPPORT & CONTACT
 # ============================================================================
 
@@ -667,19 +1673,14 @@ async def contact_support(
     - Pro: Priority support (24h response)
     - Business: Priority support (12h response)
     """
-    # Determine support tier
-    support_tier = {
-        "free": "community",
-        "basic": "email",
-        "pro": "priority",
-        "business": "priority-plus"
-    }.get(current_user.subscription_tier, "community")
+    # Get support tier from user property (based on lifetime purchases)
+    support_tier = current_user.support_tier
     
     # Log support request (in production, send email or create ticket)
     support_data = {
         "user_id": current_user.id,
         "email": current_user.email,
-        "tier": current_user.subscription_tier,
+        "credits_purchased_total": current_user.credits_purchased_total,
         "support_level": support_tier,
         "subject": subject,
         "message": message,

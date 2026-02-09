@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Tools - QuickTools</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/styles.css">
+    <style>
+        .tool-selector {
+            display: flex;
+            gap: var(--space-3);
+            justify-content: center;
+            margin-bottom: var(--space-8);
+            flex-wrap: wrap;
+        }
+        
+        .file-list {
+            background: var(--bg-tertiary);
+            padding: var(--space-4);
+            border-radius: var(--radius-lg);
+            margin-bottom: var(--space-6);
+        }
+        
+        .file-list h4 {
+            margin-bottom: var(--space-3);
+            font-size: var(--text-base);
+            font-weight: 600;
+        }
+        
+        .file-list ul {
+            list-style: none;
+        }
+        
+        .file-list li {
+            padding: var(--space-2) 0;
+            color: var(--gray-700);
+            font-size: var(--text-sm);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-content">
+                <a href="/static/index.html" class="logo">
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                        <rect width="32" height="32" rx="8" fill="url(#gradient)"/>
+                        <path d="M16 8L24 16L16 24L8 16L16 8Z" fill="white"/>
+                        <defs>
+                            <linearGradient id="gradient" x1="0" y1="0" x2="32" y2="32">
+                                <stop offset="0%" stop-color="#3B82F6"/>
+                                <stop offset="100%" stop-color="#8B5CF6"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                    <span>QuickTools</span>
+                </a>
+                
+                <div class="nav-links">
+                    <a href="/static/index.html#tools" class="nav-link">Tools</a>
+                    <a href="/static/index.html#pricing" class="nav-link">Pricing</a>
+                    <a href="/static/support.html" class="nav-link">Support</a>
+                    <a href="/static/api-keys.html" class="nav-link" id="apiKeysNav" style="display: none;">API</a>
+                </div>
+                
+                <div class="nav-actions">
+                    <div id="authButtons">
+                        <a href="/static/index.html" class="btn btn-text">Back to Home</a>
+                    </div>
+                    <div id="userButtons" style="display: none;">
+                        <div class="user-menu">
+                            <span class="user-email" id="userEmail"></span>
+                            <span class="user-credits" id="userCredits">-- credits</span>
+                            <button class="btn btn-text" onclick="logout()">Sign Out</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="tool-workspace">
+        <div class="container container-narrow">
+            <h2 class="workspace-title" style="margin-bottom: var(--space-8);">PDF Tools</h2>
+
+            <div class="message" id="messageBox" style="display: none;"></div>
+
+            <!-- Tool Selector -->
+            <div class="tool-selector">
+                <button class="btn btn-primary" id="mergeTool Btn" onclick="showTool('merge')">Merge PDFs</button>
+                <button class="btn btn-secondary" id="splitToolBtn" onclick="showTool('split')">Split PDF</button>
+                <button class="btn btn-secondary" id="compressToolBtn" onclick="showTool('compress')">Compress PDF</button>
+            </div>
+
+            <!-- Merge PDF Tool -->
+            <div class="upload-section" id="mergeTool" style="display: block;">
+                <h3 style="font-size: var(--text-2xl); font-weight: 700; margin-bottom: var(--space-4);">Merge PDFs</h3>
+                <p style="color: var(--gray-600); margin-bottom: var(--space-6);">Combine multiple PDF files into one (1 credit)</p>
+
+                <form id="mergeForm">
+                    <div class="upload-area" id="mergeUploadArea">
+                        <svg width="64" height="64" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+                        </svg>
+                        <h3>Drop PDF files here</h3>
+                        <p>or click to browse (hold Cmd/Ctrl to select multiple files)</p>
+                        <input type="file" id="mergeFileInput" accept="application/pdf" multiple hidden required>
+                    </div>
+
+                    <div id="fileList" class="file-list" style="display: none;">
+                        <h4>Files to merge:</h4>
+                        <ul id="mergeFilesList"></ul>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-large w-full" id="mergeBtn" disabled>
+                        Merge PDFs (1 credit)
+                    </button>
+                </form>
+
+                <div id="mergeResults" class="results-section" style="display: none; margin-top: var(--space-8);">
+                    <div class="result-notice">
+                        <strong>✅ PDFs Merged!</strong>
+                        <p id="mergeInfo"></p>
+                    </div>
+                    <div class="result-actions">
+                        <a id="mergeDownload" class="btn btn-primary btn-large" download>💾 Download Merged PDF</a>
+                        <button class="btn btn-secondary btn-large" onclick="resetMerge()">Merge More PDFs</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Split PDF Tool -->
+            <div class="upload-section" id="splitTool" style="display: none;">
+                <h3 style="font-size: var(--text-2xl); font-weight: 700; margin-bottom: var(--space-4);">Split PDF</h3>
+                <p style="color: var(--gray-600); margin-bottom: var(--space-6);">Split a PDF into separate pages (1 credit)</p>
+
+                <form id="splitForm">
+                    <div class="upload-area" id="splitUploadArea">
+                        <svg width="64" height="64" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+                        </svg>
+                        <h3>Drop PDF file here</h3>
+                        <p>or click to browse (PDF - max 20MB)</p>
+                        <input type="file" id="splitFileInput" accept="application/pdf" hidden required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="splitPages">Pages to extract</label>
+                        <input 
+                            type="text" 
+                            id="splitPages" 
+                            name="pages" 
+                            value="all"
+                            placeholder="all or 1-3,5,7-9"
+                        >
+                        <small style="color: var(--gray-600); font-size: var(--text-sm);">Use "all" for every page, or specify ranges like "1-3,5,7-9"</small>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-large w-full" id="splitBtn" disabled>
+                        Split PDF (1 credit)
+                    </button>
+                </form>
+
+                <div id="splitResults" class="results-section" style="display: none; margin-top: var(--space-8);">
+                    <div class="result-notice">
+                        <strong>✅ PDF Split!</strong>
+                        <p id="splitInfo"></p>
+                    </div>
+                    <div id="splitDownloads" style="display: flex; flex-direction: column; gap: var(--space-3); margin-top: var(--space-4);"></div>
+                    <button class="btn btn-secondary btn-large w-full" style="margin-top: var(--space-4);" onclick="resetSplit()">Split Another PDF</button>
+                </div>
+            </div>
+
+            <!-- Compress PDF Tool -->
+            <div class="upload-section" id="compressTool" style="display: none;">
+                <h3 style="font-size: var(--text-2xl); font-weight: 700; margin-bottom: var(--space-4);">Compress PDF</h3>
+                <p style="color: var(--gray-600); margin-bottom: var(--space-6);">Reduce PDF file size (1 credit)</p>
+
+                <form id="compressForm">
+                    <div class="upload-area" id="compressUploadArea">
+                        <svg width="64" height="64" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+                        </svg>
+                        <h3>Drop PDF file here</h3>
+                        <p>or click to browse (PDF - max 20MB)</p>
+                        <input type="file" id="compressFileInput" accept="application/pdf" hidden required>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-large w-full" id="compressBtn" disabled>
+                        Compress PDF (1 credit)
+                    </button>
+                </form>
+
+                <div id="compressResults" class="results-section" style="display: none; margin-top: var(--space-8);">
+                    <div class="result-notice">
+                        <strong>✅ PDF Compressed!</strong>
+                        <p id="compressInfo"></p>
+                    </div>
+                    <div class="result-actions">
+                        <a id="compressDownload" class="btn btn-primary btn-large" download>💾 Download Compressed PDF</a>
+                        <button class="btn btn-secondary btn-large" onclick="resetCompress()">Compress Another PDF</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/auth.js"></script>
+    <script>
+        let mergeFiles = [];
+        let splitFile = null;
+        let compressFile = null;
+        let currentUser = null;
+
+        // Initialize
+        async function init() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/static/index.html';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/auth/me', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) throw new Error('Auth failed');
+
+                currentUser = await response.json();
+
+                // Show user info
+                document.getElementById('authButtons').style.display = 'none';
+                document.getElementById('userButtons').style.display = 'flex';
+                document.getElementById('userEmail').textContent = currentUser.email;
+                document.getElementById('userCredits').textContent = `${currentUser.credits_balance} credits`;
+
+                // Show API nav if Pro/Business
+                if (currentUser.api_access_unlocked) {
+                    document.getElementById('apiKeysNav').style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Init error:', error);
+                window.location.href = '/static/index.html';
+            }
+        }
+
+        // Tool switching
+        function showTool(tool) {
+            document.querySelectorAll('.upload-section').forEach(t => t.style.display = 'none');
+            document.getElementById(tool + 'Tool').style.display = 'block';
+            
+            // Update button styles
+            document.querySelectorAll('.tool-selector button').forEach(b => {
+                b.className = 'btn btn-secondary';
+            });
+            document.getElementById(tool + 'ToolBtn').className = 'btn btn-primary';
+        }
+
+        // MERGE PDF
+        const mergeUploadArea = document.getElementById('mergeUploadArea');
+        const mergeFileInput = document.getElementById('mergeFileInput');
+
+        mergeUploadArea.addEventListener('click', () => mergeFileInput.click());
+        mergeFileInput.addEventListener('change', handleMergeFiles);
+
+        function handleMergeFiles(e) {
+            mergeFiles = Array.from(e.target.files);
+            if (mergeFiles.length < 2) {
+                showMessage('Please select at least 2 PDF files to merge', 'error');
+                return;
+            }
+            
+            const filesList = document.getElementById('mergeFilesList');
+            filesList.innerHTML = '';
+            mergeFiles.forEach((file, idx) => {
+                const li = document.createElement('li');
+                li.textContent = `${idx + 1}. ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+                filesList.appendChild(li);
+            });
+            
+            document.getElementById('fileList').style.display = 'block';
+            document.getElementById('mergeBtn').disabled = false;
+        }
+
+        document.getElementById('mergeForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await processPDF('/api/pdf/merge', mergeFiles, 'mergeBtn', 'mergeResults', 'mergeInfo', 'mergeDownload');
+        });
+
+        function resetMerge() {
+            document.getElementById('mergeForm').reset();
+            document.getElementById('mergeResults').style.display = 'none';
+            document.getElementById('fileList').style.display = 'none';
+            mergeFiles = [];
+            document.getElementById('mergeBtn').disabled = true;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // SPLIT PDF
+        const splitUploadArea = document.getElementById('splitUploadArea');
+        const splitFileInput = document.getElementById('splitFileInput');
+
+        splitUploadArea.addEventListener('click', () => splitFileInput.click());
+        splitFileInput.addEventListener('change', (e) => {
+            splitFile = e.target.files[0];
+            if (splitFile) {
+                splitUploadArea.querySelector('h3').textContent = splitFile.name;
+                splitUploadArea.querySelector('p').textContent = `${(splitFile.size / 1024 / 1024).toFixed(2)} MB`;
+                document.getElementById('splitBtn').disabled = false;
+            }
+        });
+
+        document.getElementById('splitForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const pages = document.getElementById('splitPages').value;
+            await processPDFSplit(splitFile, pages);
+        });
+
+        function resetSplit() {
+            document.getElementById('splitForm').reset();
+            document.getElementById('splitResults').style.display = 'none';
+            splitFile = null;
+            splitUploadArea.querySelector('h3').textContent = 'Drop PDF file here';
+            splitUploadArea.querySelector('p').textContent = 'or click to browse (PDF - max 20MB)';
+            document.getElementById('splitBtn').disabled = true;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // COMPRESS PDF
+        const compressUploadArea = document.getElementById('compressUploadArea');
+        const compressFileInput = document.getElementById('compressFileInput');
+
+        compressUploadArea.addEventListener('click', () => compressFileInput.click());
+        compressFileInput.addEventListener('change', (e) => {
+            compressFile = e.target.files[0];
+            if (compressFile) {
+                compressUploadArea.querySelector('h3').textContent = compressFile.name;
+                compressUploadArea.querySelector('p').textContent = `${(compressFile.size / 1024 / 1024).toFixed(2)} MB`;
+                document.getElementById('compressBtn').disabled = false;
+            }
+        });
+
+        document.getElementById('compressForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await processPDF('/api/pdf/compress', [compressFile], 'compressBtn', 'compressResults', 'compressInfo', 'compressDownload');
+        });
+
+        function resetCompress() {
+            document.getElementById('compressForm').reset();
+            document.getElementById('compressResults').style.display = 'none';
+            compressFile = null;
+            compressUploadArea.querySelector('h3').textContent = 'Drop PDF file here';
+            compressUploadArea.querySelector('p').textContent = 'or click to browse (PDF - max 20MB)';
+            document.getElementById('compressBtn').disabled = true;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Generic PDF processing
+        async function processPDF(endpoint, files, btnId, resultsId, infoId, downloadId) {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                showMessage('Please sign in to use this tool', 'error');
+                window.location.href = '/static/index.html';
+                return;
+            }
+
+            const btn = document.getElementById(btnId);
+            const originalText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = 'Processing...';
+
+            const formData = new FormData();
+            if (Array.isArray(files)) {
+                files.forEach(file => formData.append('files', file));
+            } else {
+                formData.append('file', files);
+            }
+
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    document.getElementById(infoId).textContent = getInfoText(result);
+                    document.getElementById(downloadId).href = result.download_url;
+                    document.getElementById(resultsId).style.display = 'block';
+                    document.getElementById('userCredits').textContent = `${result.credits_remaining} credits`;
+                    showMessage('PDF processed successfully!', 'success');
+                    document.getElementById(resultsId).scrollIntoView({ behavior: 'smooth' });
+                } else {
+                    showMessage(result.detail || 'PDF processing failed', 'error');
+                }
+            } catch (error) {
+                showMessage('Error: ' + error.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = originalText;
+            }
+        }
+
+        async function processPDFSplit(file, pages) {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                showMessage('Please sign in to use this tool', 'error');
+                window.location.href = '/static/index.html';
+                return;
+            }
+
+            const btn = document.getElementById('splitBtn');
+            btn.disabled = true;
+            btn.textContent = 'Splitting...';
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('pages', pages);
+
+            try {
+                const response = await fetch('/api/pdf/split', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    document.getElementById('splitInfo').textContent = `Split into ${result.pages_count} file(s)`;
+                    
+                    const downloadsDiv = document.getElementById('splitDownloads');
+                    downloadsDiv.innerHTML = '';
+                    result.download_urls.forEach((url, idx) => {
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.className = 'btn btn-primary';
+                        link.textContent = `💾 Download Page ${idx + 1}`;
+                        link.download = true;
+                        downloadsDiv.appendChild(link);
+                    });
+                    
+                    document.getElementById('splitResults').style.display = 'block';
+                    document.getElementById('userCredits').textContent = `${result.credits_remaining} credits`;
+                    showMessage('PDF split successfully!', 'success');
+                    document.getElementById('splitResults').scrollIntoView({ behavior: 'smooth' });
+                } else {
+                    showMessage(result.detail || 'PDF split failed', 'error');
+                }
+            } catch (error) {
+                showMessage('Error: ' + error.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Split PDF (1 credit)';
+            }
+        }
+
+        function getInfoText(result) {
+            if (result.compression_ratio) {
+                return `${(result.original_size / 1024 / 1024).toFixed(2)} MB → ${(result.compressed_size / 1024 / 1024).toFixed(2)} MB (${result.compression_ratio} reduced)`;
+            } else if (result.files_merged) {
+                return `Merged ${result.files_merged} PDF files into one (${(result.output_size / 1024 / 1024).toFixed(2)} MB)`;
+            }
+            return 'PDF processed successfully';
+        }
+
+        function showMessage(text, type) {
+            const messageBox = document.getElementById('messageBox');
+            messageBox.textContent = text;
+            messageBox.className = 'message ' + type;
+            messageBox.style.display = 'block';
+            setTimeout(() => messageBox.style.display = 'none', 5000);
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = '/static/index.html';
+        }
+
+        // Initialize on load
+        init();
+    </script>
+</body>
+</html>

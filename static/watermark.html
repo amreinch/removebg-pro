@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Watermark - QuickTools</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-content">
+                <a href="/static/index.html" class="logo">
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                        <rect width="32" height="32" rx="8" fill="url(#gradient)"/>
+                        <path d="M16 8L24 16L16 24L8 16L16 8Z" fill="white"/>
+                        <defs>
+                            <linearGradient id="gradient" x1="0" y1="0" x2="32" y2="32">
+                                <stop offset="0%" stop-color="#3B82F6"/>
+                                <stop offset="100%" stop-color="#8B5CF6"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                    <span>QuickTools</span>
+                </a>
+                
+                <div class="nav-links">
+                    <a href="/static/index.html#tools" class="nav-link">Tools</a>
+                    <a href="/static/index.html#pricing" class="nav-link">Pricing</a>
+                    <a href="/static/support.html" class="nav-link">Support</a>
+                    <a href="/static/api-keys.html" class="nav-link" id="apiKeysNav" style="display: none;">API</a>
+                </div>
+                
+                <div class="nav-actions">
+                    <div id="authButtons">
+                        <a href="/static/index.html" class="btn btn-text">Back to Home</a>
+                    </div>
+                    <div id="userButtons" style="display: none;">
+                        <div class="user-menu">
+                            <span class="user-email" id="userEmail"></span>
+                            <span class="user-credits" id="userCredits">0 credits</span>
+                            <button class="btn btn-text" onclick="logout()">Logout</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container" style="max-width: 800px; padding-top: var(--space-12); padding-bottom: var(--space-12);">
+            
+            <h2 class="workspace-title" style="margin-bottom: var(--space-8);">Add Watermark</h2>
+            
+            <div class="message" id="messageBox" style="display: none;"></div>
+            
+            <!-- Upload Section -->
+            <div class="tool-workspace" id="uploadSection">
+                <form id="watermarkForm">
+                    <div class="upload-area" id="uploadArea">
+                        <svg width="64" height="64" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+                        </svg>
+                        <h3>Drop image here</h3>
+                        <p>or click to browse (JPG, PNG, WebP - max 20MB)</p>
+                        <input type="file" id="fileInput" accept="image/jpeg,image/jpg,image/png,image/webp" hidden required>
+                    </div>
+
+                    <div class="form-section" id="watermarkOptions" style="display: none; margin-top: var(--space-6);">
+                        <!-- Watermark Text -->
+                        <div style="margin-bottom: var(--space-4);">
+                            <label class="form-label">Watermark Text</label>
+                            <input type="text" id="watermarkText" class="form-input" placeholder="© 2026 Your Name" maxlength="100" required>
+                            <p style="font-size: var(--text-sm); color: var(--gray-600); margin-top: var(--space-2);">
+                                Max 100 characters. Examples: "© 2026 Your Name", "CONFIDENTIAL", "DRAFT"
+                            </p>
+                        </div>
+
+                        <!-- Position -->
+                        <div style="margin-bottom: var(--space-4);">
+                            <label class="form-label">Position</label>
+                            <select id="positionSelect" class="form-input">
+                                <option value="tiled">Tiled (across entire image)</option>
+                                <option value="bottom-right">Bottom Right</option>
+                                <option value="bottom-left">Bottom Left</option>
+                                <option value="top-right">Top Right</option>
+                                <option value="top-left">Top Left</option>
+                                <option value="center">Center</option>
+                            </select>
+                        </div>
+
+                        <!-- Opacity -->
+                        <div>
+                            <label class="form-label">Opacity: <span id="opacityValue">60</span>%</label>
+                            <input type="range" id="opacitySlider" min="10" max="100" value="60" style="width: 100%;">
+                            <p style="font-size: var(--text-sm); color: var(--gray-600); margin-top: var(--space-2);">
+                                Lower = More transparent, Higher = More visible
+                            </p>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-large w-full" id="watermarkBtn" disabled style="margin-top: var(--space-6);">
+                        Preview Watermark (Free)
+                    </button>
+                </form>
+            </div>
+
+            <!-- Processing -->
+            <div id="processingSection" style="display: none; text-align: center; padding: var(--space-12) 0;">
+                <div class="spinner"></div>
+                <p style="margin-top: var(--space-4); color: var(--gray-600);">Adding watermark...</p>
+            </div>
+
+            <!-- Results -->
+            <div id="resultsSection" class="tool-workspace" style="display: none; margin-top: var(--space-8);">
+                <h3 style="font-size: var(--text-xl); font-weight: 700; margin-bottom: var(--space-4);">✅ Watermark Added!</h3>
+                
+                <!-- Before/After Comparison -->
+                <div class="comparison-slider" style="margin-bottom: var(--space-4);">
+                    <div class="comparison-image">
+                        <img id="originalImage" alt="Original">
+                        <span class="image-label">Original</span>
+                    </div>
+                    <div class="comparison-image">
+                        <img id="previewImage" alt="Watermarked">
+                        <span class="image-label">Watermarked (Preview)</span>
+                    </div>
+                </div>
+                <p style="font-size: var(--text-sm); color: var(--gray-600); margin-bottom: var(--space-4); text-align: center;">
+                    Preview has "PREVIEW" overlay • Download to get clean watermarked version
+                </p>
+
+                <div class="result-card" style="background: var(--gray-50); padding: var(--space-4); border-radius: var(--radius-lg); margin-bottom: var(--space-4);">
+                    <div style="display: grid; gap: var(--space-2);">
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: var(--gray-600);">Watermark text:</span>
+                            <strong id="appliedText">-</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: var(--gray-600);">Position:</span>
+                            <strong id="appliedPosition">-</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <button id="downloadBtn" class="btn btn-primary btn-large w-full" style="margin-bottom: var(--space-3);">
+                    💾 Download Clean Version (1 credit)
+                </button>
+                <button class="btn btn-secondary btn-large w-full" onclick="resetForm()">
+                    Watermark Another Image
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const API_BASE = window.location.origin;
+        let selectedFile = null;
+        let watermarkedFileId = null;
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+
+        // Initialize
+        async function init() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/static/index.html';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/auth/me`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) throw new Error('Auth failed');
+
+                const userData = await response.json();
+                document.getElementById('authButtons').style.display = 'none';
+                document.getElementById('userButtons').style.display = 'flex';
+                document.getElementById('userEmail').textContent = userData.email;
+                document.getElementById('userCredits').textContent = `${userData.credits_balance} credits`;
+
+                if (userData.api_access_unlocked) {
+                    document.getElementById('apiKeysNav').style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Auth error:', error);
+                localStorage.removeItem('token');
+                window.location.href = '/static/index.html';
+            }
+        }
+
+        init();
+
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = '/static/index.html';
+        }
+
+        // File upload handlers
+        uploadArea.addEventListener('click', () => fileInput.click());
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = 'var(--primary)';
+        });
+
+        uploadArea.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = 'var(--gray-300)';
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = 'var(--gray-300)';
+            if (e.dataTransfer.files.length) {
+                handleFile(e.dataTransfer.files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+            if (!validTypes.includes(file.type)) {
+                showMessage('Invalid file type. Supported: JPG, PNG, WebP', 'error');
+                return;
+            }
+
+            if (file.size > 20 * 1024 * 1024) {
+                showMessage('File too large. Maximum size is 20MB.', 'error');
+                return;
+            }
+
+            selectedFile = file;
+            document.getElementById('watermarkOptions').style.display = 'block';
+            document.getElementById('watermarkBtn').disabled = false;
+            
+            uploadArea.querySelector('h3').textContent = file.name;
+            uploadArea.querySelector('p').textContent = `${(file.size / 1024 / 1024).toFixed(2)} MB - Configure watermark below`;
+        }
+
+        // Opacity slider
+        document.getElementById('opacitySlider').addEventListener('input', (e) => {
+            document.getElementById('opacityValue').textContent = e.target.value;
+        });
+
+        // Form submit
+        document.getElementById('watermarkForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!selectedFile) return;
+
+            const watermarkText = document.getElementById('watermarkText').value.trim();
+            if (!watermarkText) {
+                showMessage('Please enter watermark text', 'error');
+                return;
+            }
+
+            const token = localStorage.getItem('token');
+            if (!token) {
+                showMessage('Please sign in to use this tool', 'error');
+                window.location.href = '/static/index.html';
+                return;
+            }
+
+            document.getElementById('uploadSection').style.display = 'none';
+            document.getElementById('processingSection').style.display = 'block';
+
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            formData.append('text', watermarkText);
+            formData.append('position', document.getElementById('positionSelect').value);
+            formData.append('opacity', document.getElementById('opacitySlider').value);
+
+            try {
+                const response = await fetch(`${API_BASE}/api/watermark/add`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    watermarkedFileId = result.file_id;
+                    
+                    // Show original and watermarked images
+                    document.getElementById('originalImage').src = URL.createObjectURL(selectedFile);
+                    document.getElementById('previewImage').src = result.preview_url;
+                    
+                    // Update results
+                    document.getElementById('appliedText').textContent = result.watermark_text;
+                    document.getElementById('appliedPosition').textContent = result.position.replace('-', ' ');
+                    
+                    document.getElementById('processingSection').style.display = 'none';
+                    document.getElementById('resultsSection').style.display = 'block';
+                    
+                    showMessage('Watermark preview ready! No credit used yet.', 'success');
+                    document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+                } else {
+                    throw new Error(result.detail || 'Watermark failed');
+                }
+            } catch (error) {
+                showMessage('Error: ' + error.message, 'error');
+                document.getElementById('processingSection').style.display = 'none';
+                document.getElementById('uploadSection').style.display = 'block';
+            }
+        });
+
+        // Download button
+        document.getElementById('downloadBtn').addEventListener('click', async () => {
+            if (!watermarkedFileId) return;
+
+            const token = localStorage.getItem('token');
+            const btn = document.getElementById('downloadBtn');
+            btn.disabled = true;
+            btn.textContent = 'Downloading...';
+
+            try {
+                const response = await fetch(`${API_BASE}/api/download/${watermarkedFileId}`, {
+                    method: 'GET',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Download failed');
+                }
+
+                // Get blob and trigger download
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `watermarked_${selectedFile.name}`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+
+                // Reload user profile to update credits
+                const profileResponse = await fetch(`${API_BASE}/api/auth/me`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (profileResponse.ok) {
+                    const userData = await profileResponse.json();
+                    document.getElementById('userCredits').textContent = `${userData.credits_balance} credits`;
+                }
+                
+                showMessage('Download complete! 1 credit used.', 'success');
+            } catch (error) {
+                showMessage('Error: ' + error.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '💾 Download Clean Version (1 credit)';
+            }
+        });
+
+        function resetForm() {
+            // Clean up object URLs
+            const originalImg = document.getElementById('originalImage');
+            const previewImg = document.getElementById('previewImage');
+            if (originalImg.src && originalImg.src.startsWith('blob:')) {
+                URL.revokeObjectURL(originalImg.src);
+            }
+            if (previewImg.src && previewImg.src.startsWith('blob:')) {
+                URL.revokeObjectURL(previewImg.src);
+            }
+            
+            selectedFile = null;
+            watermarkedFileId = null;
+            document.getElementById('watermarkForm').reset();
+            document.getElementById('watermarkOptions').style.display = 'none';
+            document.getElementById('resultsSection').style.display = 'none';
+            document.getElementById('uploadSection').style.display = 'block';
+            document.getElementById('watermarkBtn').disabled = true;
+            document.getElementById('opacitySlider').value = 60;
+            document.getElementById('opacityValue').textContent = '60';
+            uploadArea.querySelector('h3').textContent = 'Drop image here';
+            uploadArea.querySelector('p').textContent = 'or click to browse (JPG, PNG, WebP - max 20MB)';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function showMessage(text, type) {
+            const box = document.getElementById('messageBox');
+            box.textContent = text;
+            box.className = `message message-${type}`;
+            box.style.display = 'block';
+            setTimeout(() => box.style.display = 'none', 5000);
+        }
+    </script>
+</body>
+</html>

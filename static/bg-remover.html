@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Background Remover - QuickTools</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-content">
+                <a href="/static/index.html" class="logo">
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                        <rect width="32" height="32" rx="8" fill="url(#gradient)"/>
+                        <path d="M16 8L24 16L16 24L8 16L16 8Z" fill="white"/>
+                        <defs>
+                            <linearGradient id="gradient" x1="0" y1="0" x2="32" y2="32">
+                                <stop offset="0%" stop-color="#3B82F6"/>
+                                <stop offset="100%" stop-color="#8B5CF6"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                    <span>QuickTools</span>
+                </a>
+                
+                <div class="nav-links">
+                    <a href="/static/index.html#tools" class="nav-link">Tools</a>
+                    <a href="/static/index.html#pricing" class="nav-link">Pricing</a>
+                    <a href="/static/support.html" class="nav-link">Support</a>
+                    <a href="/static/api-keys.html" class="nav-link" id="apiKeysNav" style="display: none;">API</a>
+                </div>
+                
+                <div class="nav-actions">
+                    <div id="authButtons">
+                        <a href="/static/index.html" class="btn btn-text">Back to Home</a>
+                    </div>
+                    <div id="userButtons" style="display: none;">
+                        <div class="user-menu">
+                            <span class="user-email" id="userEmail"></span>
+                            <span class="user-credits" id="userCredits">-- credits</span>
+                            <button class="btn btn-text" onclick="logout()">Sign Out</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="tool-workspace">
+        <div class="container container-narrow">
+            <h2 class="workspace-title" style="margin-bottom: var(--space-8);">Remove Background</h2>
+            
+            <div class="message" id="messageBox" style="display: none;"></div>
+            
+            <!-- Upload Area -->
+            <div class="upload-section" id="uploadSection">
+                <div class="upload-area" id="uploadArea">
+                    <svg width="64" height="64" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+                    </svg>
+                    <h3>Drop your image here</h3>
+                    <p>or click to browse (JPG, PNG, WebP - max 10MB)</p>
+                    <input type="file" id="fileInput" accept="image/jpeg,image/jpg,image/png,image/webp" hidden>
+                </div>
+                
+                <div class="format-options">
+                    <label>Output Format:</label>
+                    <div class="format-buttons">
+                        <button type="button" class="format-btn active" data-format="png">PNG</button>
+                        <button type="button" class="format-btn" data-format="jpg">JPG</button>
+                        <button type="button" class="format-btn" data-format="webp">WebP</button>
+                    </div>
+                </div>
+                
+                <button class="btn btn-primary btn-large w-full" id="processBtn" disabled>
+                    Remove Background (Preview FREE)
+                </button>
+            </div>
+            
+            <!-- Processing State -->
+            <div class="processing-section" id="processingSection" style="display: none;">
+                <div class="loader"></div>
+                <h3>Processing your image...</h3>
+                <p>This may take a few seconds</p>
+            </div>
+            
+            <!-- Results Section -->
+            <div class="results-section" id="resultsSection" style="display: none;">
+                <div class="result-notice">
+                    <strong>💎 Preview (FREE)</strong>
+                    <p>This is a watermarked preview. Download the clean version for 1 credit.</p>
+                </div>
+                
+                <div class="comparison-slider">
+                    <div class="comparison-image">
+                        <img id="originalImage" alt="Original">
+                        <span class="image-label">Original</span>
+                    </div>
+                    <div class="comparison-image">
+                        <img id="processedImage" alt="Processed">
+                        <span class="image-label">Background Removed</span>
+                    </div>
+                </div>
+                
+                <div class="result-actions">
+                    <button class="btn btn-primary btn-large" id="downloadBtn">
+                        💾 Download Clean Version (1 credit)
+                    </button>
+                    <button class="btn btn-secondary btn-large" onclick="resetForm()">
+                        Process Another Image
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        let selectedFile = null;
+        let selectedFormat = 'png';
+        let currentUser = null;
+        let previewFileId = null;
+
+        // Initialize
+        async function init() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/static/index.html';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/auth/me`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) throw new Error('Auth failed');
+
+                currentUser = await response.json();
+
+                // Show user info
+                document.getElementById('authButtons').style.display = 'none';
+                document.getElementById('userButtons').style.display = 'flex';
+                document.getElementById('userEmail').textContent = currentUser.email;
+                document.getElementById('userCredits').textContent = `${currentUser.credits_balance} credits`;
+
+                // Show API nav if Pro/Business
+                if (currentUser.api_access_unlocked) {
+                    document.getElementById('apiKeysNav').style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Init error:', error);
+                window.location.href = '/static/index.html';
+            }
+        }
+
+        // Upload area interactions
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+
+        uploadArea.addEventListener('click', () => fileInput.click());
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = 'var(--brand-primary)';
+            uploadArea.style.background = 'rgba(37, 99, 235, 0.02)';
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.style.borderColor = '';
+            uploadArea.style.background = '';
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '';
+            uploadArea.style.background = '';
+            const file = e.dataTransfer.files[0];
+            if (file) handleFile(file);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) handleFile(file);
+        });
+
+        function handleFile(file) {
+            const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+            if (!validTypes.includes(file.type)) {
+                showMessage('Invalid file type. Please upload JPG, PNG, or WebP.', 'error');
+                return;
+            }
+
+            if (file.size > 10 * 1024 * 1024) {
+                showMessage('File too large. Maximum size is 10MB.', 'error');
+                return;
+            }
+
+            selectedFile = file;
+            document.getElementById('processBtn').disabled = false;
+
+            uploadArea.querySelector('h3').textContent = file.name;
+            uploadArea.querySelector('p').textContent = `${(file.size / 1024).toFixed(0)} KB - Ready to process`;
+        }
+
+        // Format buttons
+        document.querySelectorAll('.format-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.format-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                selectedFormat = btn.dataset.format;
+            });
+        });
+
+        // Process button
+        document.getElementById('processBtn').addEventListener('click', async () => {
+            if (!selectedFile) return;
+
+            const token = localStorage.getItem('token');
+            if (!token) {
+                showMessage('Please sign in to use this tool', 'error');
+                window.location.href = '/static/index.html';
+                return;
+            }
+
+            document.getElementById('uploadSection').style.display = 'none';
+            document.getElementById('processingSection').style.display = 'block';
+
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            formData.append('format', selectedFormat);
+
+            try {
+                const response = await fetch(`${API_BASE}/api/remove-background`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    previewFileId = result.file_id;
+                    document.getElementById('originalImage').src = URL.createObjectURL(selectedFile);
+                    document.getElementById('processedImage').src = result.output_url;
+                    
+                    document.getElementById('processingSection').style.display = 'none';
+                    document.getElementById('resultsSection').style.display = 'block';
+                    
+                    // Update credits
+                    if (result.credits_remaining !== undefined) {
+                        document.getElementById('userCredits').textContent = `${result.credits_remaining} credits`;
+                    }
+                    
+                    showMessage('Background removed successfully!', 'success');
+                    document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+                } else {
+                    throw new Error(result.detail || 'Processing failed');
+                }
+            } catch (error) {
+                showMessage('Error: ' + error.message, 'error');
+                document.getElementById('processingSection').style.display = 'none';
+                document.getElementById('uploadSection').style.display = 'block';
+            }
+        });
+
+        // Download button
+        document.getElementById('downloadBtn').addEventListener('click', async () => {
+            if (!previewFileId) return;
+
+            const token = localStorage.getItem('token');
+            const btn = document.getElementById('downloadBtn');
+            btn.disabled = true;
+            btn.textContent = 'Downloading...';
+
+            try {
+                const response = await fetch(`${API_BASE}/api/download/${previewFileId}`, {
+                    method: 'GET',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Download failed');
+                }
+
+                // Get blob and trigger download
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `background_removed.${selectedFormat}`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+
+                // Reload user profile to update credits
+                const profileResponse = await fetch(`${API_BASE}/api/auth/me`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (profileResponse.ok) {
+                    const userData = await profileResponse.json();
+                    document.getElementById('userCredits').textContent = `${userData.credits_balance} credits`;
+                }
+                
+                showMessage('Download complete! 1 credit used.', 'success');
+            } catch (error) {
+                showMessage('Error: ' + error.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '💾 Download Clean Version (1 credit)';
+            }
+        });
+
+        function resetForm() {
+            selectedFile = null;
+            previewFileId = null;
+            document.getElementById('fileInput').value = '';
+            uploadArea.querySelector('h3').textContent = 'Drop your image here';
+            uploadArea.querySelector('p').textContent = 'or click to browse (JPG, PNG, WebP - max 10MB)';
+            document.getElementById('processBtn').disabled = true;
+            document.getElementById('resultsSection').style.display = 'none';
+            document.getElementById('uploadSection').style.display = 'block';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function showMessage(text, type) {
+            const messageBox = document.getElementById('messageBox');
+            messageBox.textContent = text;
+            messageBox.className = 'message ' + type;
+            messageBox.style.display = 'block';
+            setTimeout(() => messageBox.style.display = 'none', 5000);
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = '/static/index.html';
+        }
+
+        // Initialize on load
+        init();
+    </script>
+</body>
+</html>

@@ -7,7 +7,7 @@ from models import Base
 import os
 
 # Database URL (SQLite for simplicity, can switch to PostgreSQL)
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./removebg.db")
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./quicktools.db")
 
 # Create engine
 engine = create_engine(

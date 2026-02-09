@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Compression - QuickTools</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-content">
+                <a href="/static/index.html" class="logo">
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                        <rect width="32" height="32" rx="8" fill="url(#gradient)"/>
+                        <path d="M16 8L24 16L16 24L8 16L16 8Z" fill="white"/>
+                        <defs>
+                            <linearGradient id="gradient" x1="0" y1="0" x2="32" y2="32">
+                                <stop offset="0%" stop-color="#3B82F6"/>
+                                <stop offset="100%" stop-color="#8B5CF6"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                    <span>QuickTools</span>
+                </a>
+                
+                <div class="nav-links">
+                    <a href="/static/index.html#tools" class="nav-link">Tools</a>
+                    <a href="/static/index.html#pricing" class="nav-link">Pricing</a>
+                    <a href="/static/support.html" class="nav-link">Support</a>
+                    <a href="/static/api-keys.html" class="nav-link" id="apiKeysNav" style="display: none;">API</a>
+                </div>
+                
+                <div class="nav-actions">
+                    <div id="authButtons">
+                        <a href="/static/index.html" class="btn btn-text">Back to Home</a>
+                    </div>
+                    <div id="userButtons" style="display: none;">
+                        <div class="user-menu">
+                            <span class="user-email" id="userEmail"></span>
+                            <span class="user-credits" id="userCredits">0 credits</span>
+                            <button class="btn btn-text" onclick="logout()">Logout</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container" style="max-width: 800px; padding-top: var(--space-12); padding-bottom: var(--space-12);">
+            
+            <h2 class="workspace-title" style="margin-bottom: var(--space-8);">Image Compression</h2>
+            
+            <div class="message" id="messageBox" style="display: none;"></div>
+            
+            <!-- Upload Section -->
+            <div class="tool-workspace" id="uploadSection">
+                <form id="compressForm">
+                    <div class="upload-area" id="uploadArea">
+                        <svg width="64" height="64" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+                        </svg>
+                        <h3>Drop image here</h3>
+                        <p>or click to browse (JPG, PNG, WebP - max 20MB)</p>
+                        <input type="file" id="fileInput" accept="image/jpeg,image/jpg,image/png,image/webp" hidden required>
+                    </div>
+
+                    <div class="form-section" id="qualitySection" style="display: none; margin-top: var(--space-6);">
+                        <label class="form-label">Compression Level</label>
+                        <div class="quality-presets" style="display: flex; gap: var(--space-3); margin-bottom: var(--space-4);">
+                            <button type="button" class="preset-btn" data-quality="95">
+                                <strong>Light</strong>
+                                <span style="font-size: var(--text-sm); color: var(--gray-600);">95% quality</span>
+                            </button>
+                            <button type="button" class="preset-btn active" data-quality="85">
+                                <strong>Medium</strong>
+                                <span style="font-size: var(--text-sm); color: var(--gray-600);">85% quality</span>
+                            </button>
+                            <button type="button" class="preset-btn" data-quality="70">
+                                <strong>Heavy</strong>
+                                <span style="font-size: var(--text-sm); color: var(--gray-600);">70% quality</span>
+                            </button>
+                        </div>
+
+                        <div>
+                            <label class="form-label">Custom Quality: <span id="qualityValue">85</span>%</label>
+                            <input type="range" id="qualitySlider" min="1" max="100" value="85" style="width: 100%;">
+                            <p style="font-size: var(--text-sm); color: var(--gray-600); margin-top: var(--space-2);">
+                                Higher = Better quality but less compression. 70-85% is recommended.
+                            </p>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-large w-full" id="compressBtn" disabled style="margin-top: var(--space-6);">
+                        Preview Compression (Free)
+                    </button>
+                </form>
+            </div>
+
+            <!-- Processing -->
+            <div id="processingSection" style="display: none; text-align: center; padding: var(--space-12) 0;">
+                <div class="spinner"></div>
+                <p style="margin-top: var(--space-4); color: var(--gray-600);">Compressing image...</p>
+            </div>
+
+            <!-- Results -->
+            <div id="resultsSection" class="tool-workspace" style="display: none; margin-top: var(--space-8);">
+                <h3 style="font-size: var(--text-xl); font-weight: 700; margin-bottom: var(--space-4);">✅ Compression Complete!</h3>
+                
+                <!-- Before/After Comparison -->
+                <div class="comparison-slider" style="margin-bottom: var(--space-4);">
+                    <div class="comparison-image">
+                        <img id="originalImage" alt="Original">
+                        <span class="image-label">Original</span>
+                    </div>
+                    <div class="comparison-image">
+                        <img id="previewImage" alt="Compressed">
+                        <span class="image-label">Compressed (Preview)</span>
+                    </div>
+                </div>
+                <p style="font-size: var(--text-sm); color: var(--gray-600); margin-bottom: var(--space-4); text-align: center;">
+                    Preview has watermark • Download to get clean version
+                </p>
+                
+                <div class="result-card" style="background: var(--gray-50); padding: var(--space-4); border-radius: var(--radius-lg); margin-bottom: var(--space-4);">
+                    <div style="display: grid; gap: var(--space-3);">
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: var(--gray-600);">Original size:</span>
+                            <strong id="originalSize">-</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: var(--gray-600);">Compressed size:</span>
+                            <strong id="compressedSize">-</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding-top: var(--space-3); border-top: 1px solid var(--gray-200);">
+                            <span style="color: var(--gray-600);">Saved:</span>
+                            <strong id="savedSize" style="color: var(--success); font-size: var(--text-lg);">-</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: var(--gray-600);">Reduction:</span>
+                            <strong id="reductionPercent" style="color: var(--success); font-size: var(--text-lg);">-</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <button id="downloadBtn" class="btn btn-primary btn-large w-full" style="margin-bottom: var(--space-3);">
+                    💾 Download Clean Version (1 credit)
+                </button>
+                <button class="btn btn-secondary btn-large w-full" onclick="resetForm()">
+                    Compress Another Image
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <style>
+        .preset-btn {
+            flex: 1;
+            padding: var(--space-4);
+            border: 2px solid var(--gray-300);
+            border-radius: var(--radius-lg);
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: var(--space-1);
+        }
+        .preset-btn:hover {
+            border-color: var(--primary);
+            background: var(--primary-50);
+        }
+        .preset-btn.active {
+            border-color: var(--primary);
+            background: var(--primary-50);
+            box-shadow: 0 0 0 3px var(--primary-100);
+        }
+    </style>
+
+    <script>
+        const API_BASE = window.location.origin;
+        let selectedFile = null;
+        let selectedQuality = 85;
+        let currentUser = null;
+        let compressedFileId = null;
+
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+
+        // Drag & drop
+        uploadArea.addEventListener('click', () => fileInput.click());
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = 'var(--primary)';
+        });
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.style.borderColor = 'var(--gray-300)';
+        });
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = 'var(--gray-300)';
+            if (e.dataTransfer.files.length) {
+                handleFile(e.dataTransfer.files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+            if (!validTypes.includes(file.type)) {
+                showMessage('Invalid file type. Supported: JPG, PNG, WebP', 'error');
+                return;
+            }
+
+            if (file.size > 20 * 1024 * 1024) {
+                showMessage('File too large. Maximum size is 20MB.', 'error');
+                return;
+            }
+
+            selectedFile = file;
+            document.getElementById('qualitySection').style.display = 'block';
+            document.getElementById('compressBtn').disabled = false;
+            
+            uploadArea.querySelector('h3').textContent = file.name;
+            uploadArea.querySelector('p').textContent = `${(file.size / 1024 / 1024).toFixed(2)} MB - Choose compression level below`;
+        }
+
+        // Preset buttons
+        document.querySelectorAll('.preset-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                selectedQuality = parseInt(btn.dataset.quality);
+                document.getElementById('qualitySlider').value = selectedQuality;
+                document.getElementById('qualityValue').textContent = selectedQuality;
+            });
+        });
+
+        // Quality slider
+        document.getElementById('qualitySlider').addEventListener('input', (e) => {
+            selectedQuality = parseInt(e.target.value);
+            document.getElementById('qualityValue').textContent = selectedQuality;
+            // Remove active state from presets when using custom
+            document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+        });
+
+        // Form submit
+        document.getElementById('compressForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!selectedFile) return;
+
+            const token = localStorage.getItem('token');
+            if (!token) {
+                showMessage('Please sign in to use this tool', 'error');
+                window.location.href = '/static/index.html';
+                return;
+            }
+
+            document.getElementById('uploadSection').style.display = 'none';
+            document.getElementById('processingSection').style.display = 'block';
+
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            formData.append('quality', selectedQuality);
+
+            try {
+                const response = await fetch(`${API_BASE}/api/compress/image`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // Store file ID for download
+                    compressedFileId = result.file_id;
+                    
+                    // Show original and compressed images
+                    document.getElementById('originalImage').src = URL.createObjectURL(selectedFile);
+                    document.getElementById('previewImage').src = result.preview_url;
+                    
+                    // Update results
+                    document.getElementById('originalSize').textContent = `${(result.original_size / 1024 / 1024).toFixed(2)} MB`;
+                    document.getElementById('compressedSize').textContent = `${(result.compressed_size / 1024 / 1024).toFixed(2)} MB`;
+                    document.getElementById('savedSize').textContent = `${(result.size_reduction / 1024 / 1024).toFixed(2)} MB saved`;
+                    document.getElementById('reductionPercent').textContent = `${result.reduction_percent}% smaller`;
+                    
+                    document.getElementById('processingSection').style.display = 'none';
+                    document.getElementById('resultsSection').style.display = 'block';
+                    
+                    showMessage('Compression preview ready! No credit used yet.', 'success');
+                    document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+                } else {
+                    throw new Error(result.detail || 'Compression failed');
+                }
+            } catch (error) {
+                showMessage('Error: ' + error.message, 'error');
+                document.getElementById('processingSection').style.display = 'none';
+                document.getElementById('uploadSection').style.display = 'block';
+            }
+        });
+
+        // Download button (deducts 1 credit)
+        document.getElementById('downloadBtn').addEventListener('click', async () => {
+            if (!compressedFileId) return;
+
+            const token = localStorage.getItem('token');
+            const btn = document.getElementById('downloadBtn');
+            btn.disabled = true;
+            btn.textContent = 'Downloading...';
+
+            try {
+                const response = await fetch(`${API_BASE}/api/download/${compressedFileId}`, {
+                    method: 'GET',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Download failed');
+                }
+
+                // Get blob and trigger download
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `compressed_image.${selectedFile.name.split('.').pop()}`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+
+                // Reload user profile to update credits
+                const profileResponse = await fetch(`${API_BASE}/api/auth/me`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (profileResponse.ok) {
+                    const userData = await profileResponse.json();
+                    document.getElementById('userCredits').textContent = `${userData.credits_balance} credits`;
+                }
+                
+                showMessage('Download complete! 1 credit used.', 'success');
+            } catch (error) {
+                showMessage('Error: ' + error.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '💾 Download Clean Version (1 credit)';
+            }
+        });
+
+        function resetForm() {
+            // Clean up object URLs to free memory
+            const originalImg = document.getElementById('originalImage');
+            const previewImg = document.getElementById('previewImage');
+            if (originalImg.src && originalImg.src.startsWith('blob:')) {
+                URL.revokeObjectURL(originalImg.src);
+            }
+            if (previewImg.src && previewImg.src.startsWith('blob:')) {
+                URL.revokeObjectURL(previewImg.src);
+            }
+            
+            selectedFile = null;
+            selectedQuality = 85;
+            compressedFileId = null;
+            document.getElementById('compressForm').reset();
+            document.getElementById('qualitySection').style.display = 'none';
+            document.getElementById('resultsSection').style.display = 'none';
+            document.getElementById('uploadSection').style.display = 'block';
+            document.getElementById('compressBtn').disabled = true;
+            document.getElementById('qualitySlider').value = 85;
+            document.getElementById('qualityValue').textContent = '85';
+            document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+            document.querySelector('.preset-btn[data-quality="85"]').classList.add('active');
+            uploadArea.querySelector('h3').textContent = 'Drop image here';
+            uploadArea.querySelector('p').textContent = 'or click to browse (JPG, PNG, WebP - max 20MB)';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function showMessage(text, type) {
+            const box = document.getElementById('messageBox');
+            box.textContent = text;
+            box.className = `message message-${type}`;
+            box.style.display = 'block';
+            setTimeout(() => box.style.display = 'none', 5000);
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = '/static/index.html';
+        }
+
+        // Initialize
+        async function init() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/static/index.html';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/auth/me`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) throw new Error('Auth failed');
+
+                currentUser = await response.json();
+
+                document.getElementById('authButtons').style.display = 'none';
+                document.getElementById('userButtons').style.display = 'flex';
+                document.getElementById('userEmail').textContent = currentUser.email;
+                document.getElementById('userCredits').textContent = `${currentUser.credits_balance} credits`;
+
+                if (currentUser.api_access_unlocked) {
+                    document.getElementById('apiKeysNav').style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Init error:', error);
+                localStorage.removeItem('token');
+                window.location.href = '/static/index.html';
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>

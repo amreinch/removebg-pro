@@ -177,7 +177,7 @@ async function handleSignup(e) {
         
         closeModal('signupModal');
         await loadUserProfile();
-        showMessage('success', `Welcome! You have ${currentUser.credits_remaining} free credits.`);
+        showMessage('success', `Welcome! You have ${currentUser.credits_balance} free credits.`);
         
     } catch (error) {
         document.getElementById('signupError').textContent = error.message;
@@ -221,18 +221,18 @@ function updateUI() {
         document.getElementById('authButtons').style.display = 'none';
         document.getElementById('userButtons').style.display = 'flex';
         document.getElementById('userEmail').textContent = currentUser.email;
-        document.getElementById('userCredits').textContent = `${currentUser.credits_remaining} credits`;
+        document.getElementById('userCredits').textContent = `${currentUser.credits_balance} credits`;
         
         // Update workspace credits if visible
         const creditsDisplay = document.getElementById('creditsDisplay');
         if (creditsDisplay) {
-            creditsDisplay.textContent = `${currentUser.credits_remaining} / ${currentUser.monthly_credits} credits remaining`;
+            creditsDisplay.textContent = `${currentUser.credits_balance} credits`;
         }
         
-        // Show API nav for Pro/Business
+        // Show API nav if API access unlocked
         const apiKeysNav = document.getElementById('apiKeysNav');
         if (apiKeysNav) {
-            if (['pro', 'business'].includes(currentUser.subscription_tier)) {
+            if (currentUser.api_access_unlocked) {
                 apiKeysNav.style.display = 'inline';
             } else {
                 apiKeysNav.style.display = 'none';
@@ -270,7 +270,7 @@ function selectTool(toolId) {
     
     // Update credits display
     document.getElementById('creditsDisplay').textContent = 
-        `${currentUser.credits_remaining} / ${currentUser.monthly_credits} credits remaining`;
+        `${currentUser.credits_balance} credits`;
     
     // Scroll to top
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -281,6 +281,22 @@ function closeToolWorkspace() {
     document.getElementById('hero').style.display = 'block';
     document.getElementById('tools').style.display = 'block';
     reset();
+}
+
+function closeToolWorkspaceIfOpen(event) {
+    const workspace = document.getElementById('toolWorkspace');
+    if (workspace && workspace.style.display !== 'none') {
+        closeToolWorkspace();
+        // Let the default anchor behavior work after closing
+        setTimeout(() => {
+            const target = event.target.getAttribute('href');
+            if (target) {
+                document.querySelector(target)?.scrollIntoView({ behavior: 'smooth' });
+            }
+        }, 100);
+        event.preventDefault();
+    }
+    // If workspace is not open, let the default anchor behavior work
 }
 
 // File handling
@@ -337,7 +353,7 @@ async function processImage() {
         
         // Update credits
         if (result.credits_remaining !== undefined) {
-            currentUser.credits_remaining = result.credits_remaining;
+            currentUser.credits_balance = result.credits_remaining;
             updateUI();
         }
         
@@ -365,9 +381,9 @@ function downloadImage() {
     if (!downloadUrl) return;
     
     // Check if user has credits
-    if (currentUser.credits_remaining === 0) {
-        showMessage('error', 'No credits remaining. Upgrade to download clean images!');
-        document.getElementById('pricing').scrollIntoView({ behavior: 'smooth' });
+    if (currentUser.credits_balance === 0) {
+        showMessage('error', 'No credits remaining. Buy more credits to continue!');
+        window.location.href = '/static/index.html#pricing';
         return;
     }
     

@@ -3,157 +3,86 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Support - RemoveBG Pro</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
-        
-        .container {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            max-width: 700px;
-            padding: 40px;
-            margin: 0 auto;
-        }
-        
-        h1 {
-            margin-bottom: 10px;
-        }
-        
-        .subtitle {
-            color: #666;
-            margin-bottom: 30px;
-        }
-        
-        .notice {
-            background: #f0f4ff;
-            border-left: 4px solid #667eea;
-            padding: 15px;
-            margin-bottom: 30px;
-            border-radius: 5px;
-        }
-        
-        .notice.error {
-            background: #fff5f5;
-            border-left-color: #e53e3e;
-            color: #c53030;
-        }
-        
-        .notice.success {
-            background: #f0fff4;
-            border-left-color: #38a169;
-            color: #2f855a;
-        }
-        
-        .support-tier {
-            background: #f9fafb;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 30px;
-        }
-        
-        .support-tier h3 {
-            margin-bottom: 10px;
-        }
-        
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-        }
-        
-        .form-group input,
-        .form-group textarea {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 1em;
-            font-family: inherit;
-        }
-        
-        .form-group textarea {
-            min-height: 150px;
-            resize: vertical;
-        }
-        
-        .btn {
-            padding: 15px 30px;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            width: 100%;
-        }
-        
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-        
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
-        }
-        
-        .back-link {
-            color: #667eea;
-            text-decoration: none;
-            font-weight: 600;
-        }
-        
-        .back-link:hover {
-            text-decoration: underline;
-        }
-    </style>
+    <title>Support - QuickTools</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-    <div class="container">
-        <h1>📧 Contact Support</h1>
-        <p class="subtitle">We're here to help!</p>
-        
-        <div id="noticeBox" style="display: none;"></div>
-        
-        <!-- Support Tier Info -->
-        <div class="support-tier" id="tierInfo">
-            <h3>Your Support Level: <span id="supportLevel">Loading...</span></h3>
-            <p id="responseTime">Loading...</p>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-content">
+                <a href="/static/index.html" class="logo">
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                        <rect width="32" height="32" rx="8" fill="url(#gradient)"/>
+                        <path d="M16 8L24 16L16 24L8 16L16 8Z" fill="white"/>
+                        <defs>
+                            <linearGradient id="gradient" x1="0" y1="0" x2="32" y2="32">
+                                <stop offset="0%" stop-color="#3B82F6"/>
+                                <stop offset="100%" stop-color="#8B5CF6"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                    <span>QuickTools</span>
+                </a>
+                
+                <div class="nav-links">
+                    <a href="/static/index.html#tools" class="nav-link">Tools</a>
+                    <a href="/static/index.html#pricing" class="nav-link">Pricing</a>
+                    <a href="/static/support.html" class="nav-link active">Support</a>
+                    <a href="/static/api-keys.html" class="nav-link" id="apiKeysNav" style="display: none;">API</a>
+                </div>
+                
+                <div class="nav-actions">
+                    <div id="authButtons">
+                        <a href="/static/index.html" class="btn btn-text">Back to Home</a>
+                    </div>
+                    <div id="userButtons" style="display: none;">
+                        <div class="user-menu">
+                            <span class="user-email" id="userEmail"></span>
+                            <span class="user-credits" id="userCredits">-- credits</span>
+                            <button class="btn btn-text" onclick="logout()">Sign Out</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-        
-        <!-- Support Form -->
-        <form id="supportForm">
-            <div class="form-group">
-                <label>Subject</label>
-                <input type="text" name="subject" placeholder="Brief description of your issue" required minlength="3" maxlength="200">
+    </nav>
+
+    <!-- Main Content -->
+    <div class="tool-workspace">
+        <div class="container container-narrow">
+            <h2 class="workspace-title" style="margin-bottom: var(--space-8);">Contact Support</h2>
+            
+            <div class="message" id="noticeBox" style="display: none;"></div>
+            
+            <!-- Support Tier Info -->
+            <div style="background: var(--bg-tertiary); padding: var(--space-5); border-radius: var(--radius-xl); margin-bottom: var(--space-8); border: 1px solid var(--gray-200);">
+                <h3 style="font-size: var(--text-lg); font-weight: 700; margin-bottom: var(--space-2); color: var(--gray-900);">
+                    Your Support Level: <span id="supportLevel">Loading...</span>
+                </h3>
+                <p id="responseTime" style="color: var(--gray-600); font-size: var(--text-sm);"></p>
             </div>
             
-            <div class="form-group">
-                <label>Message</label>
-                <textarea name="message" placeholder="Please describe your issue in detail..." required minlength="10" maxlength="2000"></textarea>
+            <!-- Support Form -->
+            <div class="upload-section">
+                <form id="supportForm">
+                    <div class="form-group">
+                        <label>Subject</label>
+                        <input type="text" name="subject" placeholder="Brief description of your issue" required minlength="3" maxlength="200">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Message</label>
+                        <textarea name="message" placeholder="Please describe your issue in detail..." required minlength="10" maxlength="2000"></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary btn-large w-full">Send Message</button>
+                </form>
             </div>
-            
-            <button type="submit" class="btn btn-primary">Send Message</button>
-        </form>
-        
-        <p style="margin-top: 30px; text-align: center;">
-            <a href="/" class="back-link">← Back to App</a>
-        </p>
+        </div>
     </div>
     
     <script>
@@ -164,7 +93,11 @@
         async function init() {
             const token = localStorage.getItem('token');
             if (!token) {
-                window.location.href = '/';
+                // Not logged in - that's OK, show guest support
+                document.getElementById('supportLevel').textContent = 'Community Support';
+                document.getElementById('responseTime').textContent = "We'll review your message and respond when possible.";
+                document.getElementById('userButtons').style.display = 'none';
+                document.getElementById('authButtons').style.display = 'flex';
                 return;
             }
             
@@ -173,29 +106,41 @@
                 const response = await fetch(`${API_BASE}/api/auth/me`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
+                
+                if (!response.ok) throw new Error('Auth failed');
+                
                 currentUser = await response.json();
                 
-                // Update support tier info
-                const tierNames = {
-                    'free': 'Community Support',
-                    'basic': 'Email Support',
-                    'pro': 'Priority Support',
-                    'business': 'Priority Support+'
-                };
+                // Show user info
+                document.getElementById('authButtons').style.display = 'none';
+                document.getElementById('userButtons').style.display = 'flex';
+                document.getElementById('userEmail').textContent = currentUser.email;
+                document.getElementById('userCredits').textContent = `${currentUser.credits_balance} credits`;
                 
-                const responseTimes = {
-                    'free': 'We\'ll review your message and respond when possible.',
-                    'basic': 'We\'ll respond within 48 hours.',
-                    'pro': 'We\'ll respond within 24 hours.',
-                    'business': 'We\'ll respond within 12 hours.'
-                };
+                // Show API nav if Pro/Business
+                if (currentUser.api_access_unlocked) {
+                    document.getElementById('apiKeysNav').style.display = 'block';
+                }
                 
-                document.getElementById('supportLevel').textContent = tierNames[currentUser.subscription_tier] || 'Community';
-                document.getElementById('responseTime').textContent = responseTimes[currentUser.subscription_tier] || 'We\'ll respond when possible.';
+                // Update support tier info (comes from API based on lifetime purchases)
+                document.getElementById('supportLevel').textContent = currentUser.support_tier || 'Community';
+                
+                // Set response time based on support tier
+                if (currentUser.support_tier && currentUser.support_tier.includes('Dedicated')) {
+                    document.getElementById('responseTime').textContent = "We'll respond within 12 hours.";
+                } else if (currentUser.support_tier && currentUser.support_tier.includes('Priority')) {
+                    document.getElementById('responseTime').textContent = "We'll respond within 24 hours.";
+                } else if (currentUser.support_tier && currentUser.support_tier.includes('Email')) {
+                    document.getElementById('responseTime').textContent = "We'll respond within 48 hours via email.";
+                } else {
+                    document.getElementById('responseTime').textContent = "We'll review your message and respond when possible.";
+                }
                 
             } catch (error) {
                 console.error('Init error:', error);
-                window.location.href = '/';
+                // Show guest support
+                document.getElementById('supportLevel').textContent = 'Community Support';
+                document.getElementById('responseTime').textContent = "We'll review your message and respond when possible.";
             }
         }
         
@@ -204,6 +149,12 @@
             e.preventDefault();
             const formData = new FormData(e.target);
             const token = localStorage.getItem('token');
+            
+            if (!token) {
+                showNotice('error', 'Please sign in to send a support message.');
+                setTimeout(() => window.location.href = '/static/index.html', 2000);
+                return;
+            }
             
             try {
                 const response = await fetch(`${API_BASE}/api/support/contact`, {
@@ -233,10 +184,15 @@
         // Show notice
         function showNotice(type, message) {
             const box = document.getElementById('noticeBox');
-            box.className = `notice ${type}`;
+            box.className = `message ${type}`;
             box.textContent = message;
             box.style.display = 'block';
             window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = '/static/index.html';
         }
         
         // Init on load

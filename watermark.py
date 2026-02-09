@@ -5,7 +5,7 @@ from PIL import Image, ImageDraw, ImageFont
 import math
 
 
-def add_watermark(image: Image.Image, watermark_text: str = "RemoveBG Pro") -> Image.Image:
+def add_watermark(image: Image.Image, watermark_text: str = "PREVIEW") -> Image.Image:
     """
     Add diagonal watermark overlay to image
     
@@ -43,23 +43,26 @@ def add_watermark(image: Image.Image, watermark_text: str = "RemoveBG Pro") -> I
     text_width = bbox[2] - bbox[0]
     text_height = bbox[3] - bbox[1]
     
-    # Tile watermark across image
+    # Tile watermark across ENTIRE image (repetitive)
     diagonal = math.sqrt(width**2 + height**2)
-    angle = math.degrees(math.atan2(height, width))
     
     # Calculate spacing
     x_spacing = text_width * 2
     y_spacing = text_height * 3
     
-    # Number of repetitions
-    x_count = int(width / x_spacing) + 2
-    y_count = int(height / y_spacing) + 2
+    # Number of repetitions - based on diagonal to ensure full coverage after rotation
+    x_count = int(diagonal / x_spacing) + 2
+    y_count = int(diagonal / y_spacing) + 2
     
-    # Draw watermark in a grid pattern
-    for i in range(-1, x_count):
-        for j in range(-1, y_count):
-            x = i * x_spacing
-            y = j * y_spacing
+    # Start from negative to cover entire area after rotation
+    x_start = -int(diagonal / 4)
+    y_start = -int(diagonal / 4)
+    
+    # Draw watermark in a dense grid pattern
+    for i in range(x_count):
+        for j in range(y_count):
+            x = x_start + (i * x_spacing)
+            y = y_start + (j * y_spacing)
             
             # Semi-transparent white text with black outline
             draw.text(
@@ -80,7 +83,7 @@ def add_watermark(image: Image.Image, watermark_text: str = "RemoveBG Pro") -> I
     return watermarked
 
 
-def add_corner_watermark(image: Image.Image, text: str = "RemoveBG Pro") -> Image.Image:
+def add_corner_watermark(image: Image.Image, text: str = "PREVIEW") -> Image.Image:
     """
     Add small watermark in bottom-right corner (alternative style)
     

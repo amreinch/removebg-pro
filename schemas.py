@@ -27,25 +27,35 @@ class UserResponse(BaseModel):
     id: str
     email: str
     full_name: Optional[str]
-    subscription_tier: str
-    credits_remaining: int
-    monthly_credits: int
+    credits_balance: int  # Current credits
+    credits_purchased_total: int
+    credits_lifetime_used: int
+    api_access_unlocked: bool
+    support_tier: str  # Calculated from credits_purchased_total
     created_at: datetime
     
     class Config:
         from_attributes = True
+    
+    # Computed property for compatibility
+    @property
+    def credits_remaining(self):
+        """Alias for credits_balance (backwards compatibility)"""
+        return self.credits_balance
 
 
-# Subscription schemas
-class SubscriptionTier(BaseModel):
+# Credit Pack schemas
+class CreditPack(BaseModel):
     name: str
     price: int  # cents
-    monthly_credits: int
+    credits: int
+    per_credit: float
+    unlocks_api: bool
     features: list[str]
 
 
 class CheckoutSessionRequest(BaseModel):
-    tier: str = Field(..., pattern="^(basic|pro|business)$")
+    tier: str = Field(..., pattern="^(starter|standard|pro|business)$")
 
 
 class CheckoutSession(BaseModel):
@@ -71,10 +81,11 @@ class ProcessImageResponse(BaseModel):
 
 class UsageStats(BaseModel):
     total_processed: int
-    credits_used_this_month: int
-    credits_remaining: int
-    monthly_credits: int
-    subscription_tier: str
+    credits_balance: int  # Current available credits
+    credits_lifetime_used: int  # Total credits used ever
+    credits_purchased_total: int  # Total credits purchased
+    api_access_unlocked: bool  # Has API access
+    support_tier: str  # Community, Email, Priority, Dedicated
 
 
 # API Key schemas

@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Generator - QuickTools</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/styles.css">
+    <style>
+        code {
+            background: var(--gray-200);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: var(--font-mono);
+            font-size: 13px;
+            color: var(--gray-700);
+        }
+        
+        .tip-box {
+            margin-top: var(--space-3);
+            padding: var(--space-4);
+            background: rgba(37, 99, 235, 0.04);
+            border: 1px solid rgba(37, 99, 235, 0.12);
+            border-left: 3px solid var(--brand-primary);
+            border-radius: var(--radius-lg);
+            font-size: var(--text-sm);
+            line-height: 1.7;
+        }
+        
+        .tip-box strong {
+            display: block;
+            margin-bottom: var(--space-3);
+            color: var(--gray-900);
+            font-size: 15px;
+        }
+        
+        .tip-box span {
+            color: var(--gray-700);
+            display: block;
+        }
+        
+        .tip-box code {
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-content">
+                <a href="/static/index.html" class="logo">
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                        <rect width="32" height="32" rx="8" fill="url(#gradient)"/>
+                        <path d="M16 8L24 16L16 24L8 16L16 8Z" fill="white"/>
+                        <defs>
+                            <linearGradient id="gradient" x1="0" y1="0" x2="32" y2="32">
+                                <stop offset="0%" stop-color="#3B82F6"/>
+                                <stop offset="100%" stop-color="#8B5CF6"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                    <span>QuickTools</span>
+                </a>
+                
+                <div class="nav-links">
+                    <a href="/static/index.html#tools" class="nav-link">Tools</a>
+                    <a href="/static/index.html#pricing" class="nav-link">Pricing</a>
+                    <a href="/static/support.html" class="nav-link">Support</a>
+                    <a href="/static/api-keys.html" class="nav-link" id="apiKeysNav" style="display: none;">API</a>
+                </div>
+                
+                <div class="nav-actions">
+                    <div id="authButtons">
+                        <a href="/static/index.html" class="btn btn-text">Back to Home</a>
+                    </div>
+                    <div id="userButtons" style="display: none;">
+                        <div class="user-menu">
+                            <span class="user-email" id="userEmail"></span>
+                            <span class="user-credits" id="userCredits">-- credits</span>
+                            <button class="btn btn-text" onclick="logout()">Sign Out</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="tool-workspace">
+        <div class="container container-narrow">
+            <h2 class="workspace-title" style="margin-bottom: var(--space-8);">QR Code Generator</h2>
+
+            <div class="message" id="messageBox" style="display: none;"></div>
+
+            <!-- QR Code Generator Form -->
+            <div class="upload-section">
+                <h3 style="font-size: var(--text-2xl); font-weight: 700; margin-bottom: var(--space-4);">Generate QR Code</h3>
+                <p style="color: var(--gray-600); margin-bottom: var(--space-6);">Create a custom QR code for any text or URL (1 credit)</p>
+
+                <form id="qrForm">
+                    <div class="form-group">
+                        <label for="qrData">Text or URL *</label>
+                        <textarea 
+                            id="qrData" 
+                            name="data" 
+                            rows="4" 
+                            placeholder="https://example.com"
+                            required
+                        ></textarea>
+                        <div class="tip-box">
+                            <strong>💡 Quick Tips:</strong>
+                            <span>
+                                ✅ Websites: <code>https://example.com</code><br>
+                                ✅ Phone: <code>tel:+1234567890</code><br>
+                                ✅ Email: <code>mailto:user@example.com</code><br>
+                                ✅ WiFi: <code>WIFI:T:WPA;S:NetworkName;P:Password;;</code><br>
+                                ✅ SMS: <code>sms:+1234567890</code>
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="qrSize">Size (pixels)</label>
+                        <input 
+                            type="number" 
+                            id="qrSize" 
+                            name="size" 
+                            value="300" 
+                            min="100" 
+                            max="2000"
+                        >
+                        <small style="color: var(--gray-600); font-size: var(--text-sm);">Recommended: 300-500px for most uses</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="errorCorrection">Error Correction Level</label>
+                        <select 
+                            id="errorCorrection" 
+                            name="error_correction"
+                        >
+                            <option value="L">Low (7%)</option>
+                            <option value="M" selected>Medium (15%)</option>
+                            <option value="Q">Quartile (25%)</option>
+                            <option value="H">High (30%)</option>
+                        </select>
+                        <small style="color: var(--gray-600); font-size: var(--text-sm);">Higher levels allow QR code to work even if partially damaged</small>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-large w-full" id="generateBtn">
+                        Generate QR Code (1 credit)
+                    </button>
+                </form>
+            </div>
+
+            <!-- Results Section -->
+            <div class="results-section" id="resultsSection" style="display: none;">
+                <div class="result-notice">
+                    <strong>✅ QR Code Generated!</strong>
+                    <p>Your QR code is ready to download and use.</p>
+                </div>
+
+                <div style="text-align: center; background: var(--bg-tertiary); padding: var(--space-8); border-radius: var(--radius-2xl); margin-bottom: var(--space-6);">
+                    <img id="qrImage" style="max-width: 100%; border: 4px solid white; border-radius: var(--radius-xl); box-shadow: var(--shadow-lg);">
+                </div>
+
+                <div class="result-actions">
+                    <a id="downloadLink" class="btn btn-primary btn-large" download>💾 Download QR Code</a>
+                    <button class="btn btn-secondary btn-large" onclick="resetForm()">Generate Another QR Code</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/auth.js"></script>
+    <script>
+        let currentUser = null;
+
+        // Initialize
+        async function init() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/static/index.html';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/auth/me', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) throw new Error('Auth failed');
+
+                currentUser = await response.json();
+
+                // Show user info
+                document.getElementById('authButtons').style.display = 'none';
+                document.getElementById('userButtons').style.display = 'flex';
+                document.getElementById('userEmail').textContent = currentUser.email;
+                document.getElementById('userCredits').textContent = `${currentUser.credits_balance} credits`;
+
+                // Show API nav if Pro/Business
+                if (currentUser.api_access_unlocked) {
+                    document.getElementById('apiKeysNav').style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Init error:', error);
+                window.location.href = '/static/index.html';
+            }
+        }
+
+        // Form submit
+        document.getElementById('qrForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const token = localStorage.getItem('token');
+            if (!token) {
+                showMessage('Please sign in to use this tool', 'error');
+                window.location.href = '/static/index.html';
+                return;
+            }
+
+            const data = document.getElementById('qrData').value;
+            const size = document.getElementById('qrSize').value;
+            const errorCorrection = document.getElementById('errorCorrection').value;
+
+            const generateBtn = document.getElementById('generateBtn');
+            generateBtn.disabled = true;
+            generateBtn.textContent = 'Generating...';
+
+            const formData = new FormData();
+            formData.append('data', data);
+            formData.append('size', size);
+            formData.append('error_correction', errorCorrection);
+
+            try {
+                const response = await fetch('/api/qr-code/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    document.getElementById('qrImage').src = result.download_url;
+                    document.getElementById('downloadLink').href = result.download_url;
+                    document.getElementById('resultsSection').style.display = 'block';
+                    document.getElementById('userCredits').textContent = `${result.credits_remaining} credits`;
+                    showMessage('QR code generated successfully!', 'success');
+                    
+                    // Scroll to results
+                    document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+                } else {
+                    showMessage(result.detail || 'QR generation failed', 'error');
+                }
+            } catch (error) {
+                showMessage('Error generating QR code: ' + error.message, 'error');
+            } finally {
+                generateBtn.disabled = false;
+                generateBtn.textContent = 'Generate QR Code (1 credit)';
+            }
+        });
+
+        function resetForm() {
+            document.getElementById('qrForm').reset();
+            document.getElementById('resultsSection').style.display = 'none';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function showMessage(text, type) {
+            const messageBox = document.getElementById('messageBox');
+            messageBox.textContent = text;
+            messageBox.className = 'message ' + type;
+            messageBox.style.display = 'block';
+            setTimeout(() => messageBox.style.display = 'none', 5000);
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = '/static/index.html';
+        }
+
+        // Initialize on load
+        init();
+    </script>
+</body>
+</html>
