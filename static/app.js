@@ -8,6 +8,20 @@ let downloadUrl = null;
 let currentUser = null;
 let currentTool = null;
 
+// Handle out of credits error
+function handleOutOfCredits(errorMessage) {
+    // Check if error is about credits
+    if (errorMessage.includes('No credits remaining') || errorMessage.includes('credits')) {
+        // Show message and redirect to pricing
+        alert('⚠️ No Credits Remaining!\n\nYou need credits to download. Redirecting to pricing page...');
+        setTimeout(() => {
+            window.location.href = '/static/index.html#pricing';
+        }, 1000);
+        return true;
+    }
+    return false;
+}
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     initializeApp();

@@ -335,6 +335,16 @@
 
                 if (!response.ok) {
                     const error = await response.json();
+                    
+                    // Check if out of credits (403 status)
+                    if (response.status === 403 && error.detail && error.detail.includes('No credits remaining')) {
+                        alert('⚠️ No Credits Remaining!\n\nYou need credits to download. Redirecting to pricing page...');
+                        setTimeout(() => {
+                            window.location.href = '/static/index.html#pricing';
+                        }, 1000);
+                        return;
+                    }
+                    
                     throw new Error(error.detail || 'Download failed');
                 }
 
