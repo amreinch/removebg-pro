@@ -1128,7 +1128,20 @@
             document.getElementById('cropBtn').disabled = true;
             document.querySelectorAll('.ratio-btn').forEach(b => b.classList.remove('active'));
             document.querySelector('.ratio-btn[data-ratio="1:1"]').classList.add('active');
+            
+            // Clear all image sources
             cropPreviewImg.src = '';
+            if (originalImg) originalImg.src = '';
+            if (previewImg) previewImg.src = '';
+            
+            // Reset crop rectangle
+            const rect = document.getElementById('cropRectangle');
+            if (rect) {
+                rect.style.left = '';
+                rect.style.top = '';
+                rect.style.width = '';
+                rect.style.height = '';
+            }
             
             const statusEl = document.getElementById('cropStatus');
             if (statusEl) {
