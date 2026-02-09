@@ -290,10 +290,10 @@
                     
                     // Check if out of credits (403 status)
                     if (response.status === 403 && error.detail && error.detail.includes('No credits remaining')) {
-                        alert('⚠️ No Credits Remaining!\n\nYou need credits to download. Redirecting to pricing page...');
+                        showMessage('⚠️ No credits remaining. Redirecting to pricing...', 'error');
                         setTimeout(() => {
                             window.location.href = '/static/index.html#pricing';
-                        }, 1000);
+                        }, 1500);
                         return;
                     }
                     
