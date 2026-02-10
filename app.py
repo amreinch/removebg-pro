@@ -505,66 +505,6 @@ async def list_users(db: Session = Depends(get_db)):
     } for u in users]
 
 
-@app.get("/api/admin/support-tickets")
-async def list_support_tickets(
-    status: str = None,
-    db: Session = Depends(get_db)
-):
-    """
-    List all support tickets (admin only - add auth later)
-    Query params: status=open|closed|all (default: open)
-    """
-    from models import SupportTicket
-    
-    query = db.query(SupportTicket)
-    
-    # Filter by status
-    if status and status != "all":
-        query = query.filter(SupportTicket.status == status)
-    elif not status:
-        # Default: show open tickets
-        query = query.filter(SupportTicket.status == "open")
-    
-    # Order by newest first
-    tickets = query.order_by(SupportTicket.created_at.desc()).all()
-    
-    return [{
-        "id": t.id,
-        "user_id": t.user_id,
-        "user_email": t.user_email,
-        "subject": t.subject,
-        "message": t.message,
-        "status": t.status,
-        "priority": t.priority,
-        "support_tier": t.user_support_tier,
-        "credits_purchased": t.user_credits_purchased,
-        "created_at": t.created_at.isoformat() if t.created_at else None,
-        "updated_at": t.updated_at.isoformat() if t.updated_at else None
-    } for t in tickets]
-
-
-@app.post("/api/admin/support-tickets/{ticket_id}/close")
-async def close_support_ticket(
-    ticket_id: str,
-    db: Session = Depends(get_db)
-):
-    """Close a support ticket (admin only - add auth later)"""
-    from models import SupportTicket
-    
-    ticket = db.query(SupportTicket).filter(SupportTicket.id == ticket_id).first()
-    
-    if not ticket:
-        raise HTTPException(status_code=404, detail="Ticket not found")
-    
-    ticket.status = "closed"
-    ticket.closed_at = datetime.utcnow()
-    ticket.updated_at = datetime.utcnow()
-    
-    db.commit()
-    
-    return {"success": True, "message": "Ticket closed"}
-
-
 # ============================================================================
 # API KEY MANAGEMENT (Pro & Business tiers only)
 # ============================================================================
@@ -2108,63 +2048,6 @@ async def extract_text_ocr(
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"OCR extraction error: {str(e)}")
-
-
-# ============================================================================
-# SUPPORT & CONTACT
-# ============================================================================
-
-@app.post("/api/support/contact")
-async def contact_support(
-    subject: str = Form(...),
-    message: str = Form(...),
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    """
-    Submit a support request
-    
-    Support is only available for paying customers (purchased at least one credit pack).
-    Free tier users must purchase credits to access support.
-    """
-    # Check if user has purchased credits (not free tier)
-    if current_user.credits_purchased_total == 0:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Support is only available for paying customers. Please purchase a credit pack to access support."
-        )
-    
-    # Get support tier from user property (based on lifetime purchases)
-    support_tier = current_user.support_tier
-    
-    # Create support ticket in database
-    from models import SupportTicket
-    
-    ticket = SupportTicket(
-        user_id=current_user.id,
-        subject=subject,
-        message=message,
-        user_email=current_user.email,
-        user_credits_purchased=current_user.credits_purchased_total,
-        user_support_tier=support_tier,
-        status="open",
-        priority="normal"
-    )
-    
-    db.add(ticket)
-    db.commit()
-    db.refresh(ticket)
-    
-    # Log for immediate visibility
-    print(f"[SUPPORT TICKET #{ticket.id[:8]}] From: {current_user.email} | Subject: {subject}")
-    
-    return {
-        "success": True,
-        "message": "Support request submitted successfully.",
-        "ticket_id": ticket.id,
-        "support_level": support_tier,
-        "email": current_user.email
-    }
 
 
 if __name__ == "__main__":
