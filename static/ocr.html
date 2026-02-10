@@ -4,153 +4,161 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OCR Text Extraction - QuickTools</title>
-    <link rel="stylesheet" href="/styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-    <!-- Navbar -->
+    <!-- Navigation -->
     <nav class="navbar">
-        <div class="nav-container">
-            <a href="/" class="nav-logo">⚡ QuickTools</a>
-            <div class="nav-menu">
-                <a href="/#tools" class="nav-link">Tools</a>
-                <a href="/static/pricing.html" class="nav-link">Pricing</a>
-                <a href="/static/support.html" class="nav-link">Support</a>
-                <a href="/static/api-keys.html" class="nav-link">API</a>
-                <div class="nav-auth" id="navAuth">
-                    <a href="/static/app.html#login" class="btn-secondary">Login</a>
-                    <a href="/static/app.html#register" class="btn-primary">Sign Up</a>
+        <div class="container">
+            <div class="nav-content">
+                <a href="/static/index.html" class="logo">
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                        <rect width="32" height="32" rx="8" fill="url(#gradient)"/>
+                        <path d="M16 8L24 16L16 24L8 16L16 8Z" fill="white"/>
+                        <defs>
+                            <linearGradient id="gradient" x1="0" y1="0" x2="32" y2="32">
+                                <stop offset="0%" stop-color="#3B82F6"/>
+                                <stop offset="100%" stop-color="#8B5CF6"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                    <span>QuickTools</span>
+                </a>
+                
+                <div class="nav-links">
+                    <a href="/static/index.html#tools" class="nav-link">Tools</a>
+                    <a href="/static/index.html#pricing" class="nav-link">Pricing</a>
+                    <a href="/static/support.html" class="nav-link">Support</a>
+                    <a href="/static/api-keys.html" class="nav-link" id="apiKeysNav" style="display: none;">API</a>
+                </div>
+                
+                <div class="nav-actions">
+                    <div id="authButtons">
+                        <a href="/static/index.html" class="btn btn-text">Back to Home</a>
+                    </div>
+                    <div id="userButtons" style="display: none;">
+                        <div class="user-menu">
+                            <span class="user-email" id="userEmail"></span>
+                            <span class="user-credits" id="userCredits">-- credits</span>
+                            <button class="btn btn-text" onclick="logout()">Sign Out</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </nav>
 
     <!-- Main Content -->
-    <div class="container" style="max-width: 900px; margin-top: 100px;">
-        <div class="tool-header">
-            <h1>🔍 OCR Text Extraction</h1>
-            <p class="subtitle">Extract text from images and PDFs - 2 credits per file</p>
-        </div>
-
-        <!-- Credits Display -->
-        <div id="creditsDisplay" class="credits-banner" style="display: none;"></div>
-
-        <!-- Upload Section -->
-        <div class="card">
-            <h3>Upload Image or PDF</h3>
+    <div class="tool-workspace">
+        <div class="container container-narrow">
+            <h2 class="workspace-title" style="margin-bottom: var(--space-8);">OCR Text Extraction</h2>
             
-            <div class="upload-zone" id="uploadZone">
-                <input type="file" id="fileInput" accept="image/*,.pdf" hidden>
-                <div class="upload-icon">📄</div>
-                <p class="upload-text">Drop image or PDF here or click to upload</p>
-                <p class="upload-hint">Supports: JPG, PNG, WebP, BMP, TIFF, PDF • Max 20MB</p>
+            <div class="message" id="messageBox" style="display: none;"></div>
+
+            <!-- Upload Section -->
+            <div class="upload-section">
+                <div class="upload-area" id="uploadArea">
+                    <svg width="64" height="64" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+                    </svg>
+                    <h3>Drop your image or PDF here</h3>
+                    <p>or click to browse (JPG, PNG, PDF - max 20MB)</p>
+                    <input type="file" id="fileInput" accept="image/*,.pdf" hidden>
+                </div>
+
+                <div id="imagePreview" style="display: none; margin-bottom: var(--space-6); text-align: center;">
+                    <img id="previewImg" style="max-width: 100%; max-height: 300px; border-radius: 8px; border: 1px solid var(--border-color);">
+                </div>
+
+                <button class="btn btn-primary btn-large w-full" id="extractBtn" disabled>
+                    Extract Text (2 credits)
+                </button>
             </div>
 
-            <div id="fileInfo" style="display: none; margin-top: 1rem; padding: 1rem; background: var(--bg-secondary); border-radius: 8px;">
-                <div style="display: flex; align-items: center; gap: 1rem;">
-                    <div style="font-size: 2rem;" id="fileIcon">📄</div>
-                    <div style="flex: 1;">
-                        <div style="font-weight: 600;" id="fileName"></div>
-                        <div style="font-size: 0.9rem; opacity: 0.7;" id="fileSize"></div>
+            <!-- Processing State -->
+            <div class="processing-section" id="processingSection" style="display: none;">
+                <div class="loader"></div>
+                <h3>Extracting text from your file...</h3>
+                <p>This may take a few seconds for large files</p>
+            </div>
+
+            <!-- Results Section -->
+            <div class="results-section" id="resultsSection" style="display: none;">
+                <div class="result-notice success">
+                    <strong>✅ Text Extracted Successfully!</strong>
+                    <p id="textLength"></p>
+                </div>
+
+                <div style="margin-bottom: var(--space-4);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-3);">
+                        <label style="font-weight: 600;">Extracted Text:</label>
+                        <button class="btn btn-secondary" onclick="copyText()" id="copyBtn">
+                            Copy to Clipboard
+                        </button>
                     </div>
-                    <button class="btn-secondary" onclick="resetUpload()">Change</button>
-                </div>
-            </div>
-
-            <!-- Image Preview -->
-            <div id="imagePreview" style="display: none; margin-top: 1rem;">
-                <img id="previewImg" style="max-width: 100%; border-radius: 8px; border: 1px solid var(--border-color);">
-            </div>
-        </div>
-
-        <!-- Extract Button -->
-        <div class="card">
-            <button id="extractBtn" class="btn-primary" style="width: 100%; font-size: 1.1rem; padding: 1rem;" disabled>
-                <span id="extractBtnText">Extract Text (2 credits)</span>
-            </button>
-            
-            <div id="processingMessage" class="info-message" style="display: none; margin-top: 1rem;">
-                ⏳ Extracting text... This may take a few seconds for large files or PDFs.
-            </div>
-        </div>
-
-        <!-- Result Section -->
-        <div id="resultSection" class="card" style="display: none;">
-            <h3>✅ Text Extracted Successfully!</h3>
-            
-            <div style="margin-top: 1rem;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                    <h4 style="margin: 0;">Extracted Text <span id="textLength" style="font-size: 0.9rem; font-weight: normal; opacity: 0.7;"></span></h4>
-                    <button class="btn-secondary" onclick="copyText()" id="copyBtn">
-                        📋 Copy Text
-                    </button>
+                    <textarea id="extractedText" 
+                              style="width: 100%; min-height: 300px; padding: var(--space-4); 
+                                     border: 1px solid var(--border-color); border-radius: 8px; 
+                                     font-family: monospace; font-size: 0.9rem; resize: vertical;
+                                     background: var(--color-bg-secondary);"
+                              readonly></textarea>
                 </div>
 
-                <textarea id="extractedText" 
-                          style="width: 100%; min-height: 300px; padding: 1rem; 
-                                 border: 1px solid var(--border-color); border-radius: 8px; 
-                                 font-family: monospace; font-size: 0.9rem; resize: vertical;
-                                 background: var(--bg-secondary);"
-                          readonly></textarea>
-
-                <div style="display: flex; gap: 1rem; margin-top: 1rem;">
-                    <a id="downloadBtn" class="btn-primary" style="flex: 1; text-align: center; text-decoration: none; padding: 0.875rem;">
-                        📥 Download as TXT
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4);">
+                    <a id="downloadBtn" class="btn btn-primary btn-large" style="text-decoration: none; text-align: center;">
+                        Download as TXT
                     </a>
-                    <button class="btn-secondary" style="flex: 1;" onclick="resetAll()">
+                    <button class="btn btn-secondary btn-large" onclick="resetAll()">
                         Extract Another File
                     </button>
                 </div>
             </div>
-        </div>
 
-        <!-- Info Section -->
-        <div class="card" style="background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%); border: 1px solid var(--border-color);">
-            <h3>✨ OCR Features</h3>
-            <ul style="margin: 1rem 0; padding-left: 1.5rem; line-height: 1.8;">
-                <li><strong>Multi-Format Support:</strong> Images (JPG, PNG, WebP, BMP, TIFF) and PDFs</li>
-                <li><strong>Accurate Recognition:</strong> Uses Tesseract OCR engine</li>
-                <li><strong>Multi-Page PDFs:</strong> Extracts text from all pages</li>
-                <li><strong>Copy or Download:</strong> Use text directly or save as TXT file</li>
-                <li><strong>Secure:</strong> Files deleted after 24 hours</li>
-            </ul>
-            <p style="margin: 0; font-size: 0.9rem; opacity: 0.8;">
-                <strong>Use Cases:</strong> Receipts, screenshots, scanned documents, invoices, business cards
-            </p>
-            <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem; opacity: 0.8;">
-                <strong>Cost:</strong> 2 credits per file • Max file size: 20MB
-            </p>
+            <!-- Info Box -->
+            <div class="info-box" style="margin-top: var(--space-8);">
+                <h3>About OCR Text Extraction</h3>
+                <ul>
+                    <li><strong>Multi-Format:</strong> Works with images (JPG, PNG, WebP, BMP, TIFF) and PDFs</li>
+                    <li><strong>Accurate:</strong> Uses Tesseract OCR engine for reliable text recognition</li>
+                    <li><strong>Multi-Page:</strong> Extracts text from all pages in PDF documents</li>
+                    <li><strong>Copy or Download:</strong> Use text directly or save as TXT file</li>
+                    <li><strong>Secure:</strong> Files deleted after 24 hours</li>
+                </ul>
+                <p style="margin-top: var(--space-4); opacity: 0.8;">
+                    <strong>Use Cases:</strong> Receipts, screenshots, scanned documents, invoices, business cards
+                </p>
+                <p style="margin-top: var(--space-2); opacity: 0.8;">
+                    <strong>Cost:</strong> 2 credits per file • <strong>Max file size:</strong> 20MB
+                </p>
+            </div>
         </div>
     </div>
 
-    <script src="/app.js"></script>
+    <script src="/static/app.js"></script>
     <script>
         let selectedFile = null;
 
         // File upload handling
-        const uploadZone = document.getElementById('uploadZone');
+        const uploadArea = document.getElementById('uploadArea');
         const fileInput = document.getElementById('fileInput');
 
-        uploadZone.addEventListener('click', () => fileInput.click());
+        uploadArea.addEventListener('click', () => fileInput.click());
 
-        uploadZone.addEventListener('dragover', (e) => {
+        uploadArea.addEventListener('dragover', (e) => {
             e.preventDefault();
-            uploadZone.style.borderColor = 'var(--primary-color)';
-            uploadZone.style.background = 'var(--primary-light)';
+            uploadArea.classList.add('drag-over');
         });
 
-        uploadZone.addEventListener('dragleave', () => {
-            uploadZone.style.borderColor = 'var(--border-color)';
-            uploadZone.style.background = 'var(--bg-secondary)';
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('drag-over');
         });
 
-        uploadZone.addEventListener('drop', (e) => {
+        uploadArea.addEventListener('drop', (e) => {
             e.preventDefault();
-            uploadZone.style.borderColor = 'var(--border-color)';
-            uploadZone.style.background = 'var(--bg-secondary)';
-            
+            uploadArea.classList.remove('drag-over');
             const file = e.dataTransfer.files[0];
             if (file) handleFileSelect(file);
         });
@@ -174,16 +182,9 @@
             }
 
             selectedFile = file;
-            
-            document.getElementById('uploadZone').style.display = 'none';
-            document.getElementById('fileInfo').style.display = 'block';
-            document.getElementById('fileName').textContent = file.name;
-            document.getElementById('fileSize').textContent = formatFileSize(file.size);
+            uploadArea.querySelector('h3').textContent = file.name;
+            uploadArea.querySelector('p').textContent = formatFileSize(file.size);
             document.getElementById('extractBtn').disabled = false;
-
-            // Set icon based on file type
-            const fileIcon = file.type === 'application/pdf' ? '📄' : '🖼️';
-            document.getElementById('fileIcon').textContent = fileIcon;
 
             // Show image preview for images
             if (file.type.startsWith('image/')) {
@@ -198,19 +199,16 @@
             }
         }
 
-        function resetUpload() {
+        function resetAll() {
             selectedFile = null;
             fileInput.value = '';
-            document.getElementById('uploadZone').style.display = 'flex';
-            document.getElementById('fileInfo').style.display = 'none';
-            document.getElementById('imagePreview').style.display = 'none';
+            uploadArea.querySelector('h3').textContent = 'Drop your image or PDF here';
+            uploadArea.querySelector('p').textContent = 'or click to browse (JPG, PNG, PDF - max 20MB)';
             document.getElementById('extractBtn').disabled = true;
-        }
-
-        function resetAll() {
-            resetUpload();
-            document.getElementById('resultSection').style.display = 'none';
-            document.getElementById('processingMessage').style.display = 'none';
+            document.getElementById('imagePreview').style.display = 'none';
+            document.getElementById('resultsSection').style.display = 'none';
+            document.getElementById('processingSection').style.display = 'none';
+            document.querySelector('.upload-section').style.display = 'block';
         }
 
         // Extract text
@@ -224,10 +222,8 @@
                 return;
             }
 
-            const extractBtn = document.getElementById('extractBtn');
-            extractBtn.disabled = true;
-            document.getElementById('extractBtnText').textContent = 'Extracting...';
-            document.getElementById('processingMessage').style.display = 'block';
+            document.querySelector('.upload-section').style.display = 'none';
+            document.getElementById('processingSection').style.display = 'block';
 
             const formData = new FormData();
             formData.append('file', selectedFile);
@@ -244,26 +240,21 @@
                 const data = await response.json();
 
                 if (response.ok) {
-                    // Show result
-                    const fullText = data.extracted_text;
-                    document.getElementById('extractedText').value = fullText;
-                    document.getElementById('textLength').textContent = `(${data.full_text_length} characters)`;
+                    document.getElementById('extractedText').value = data.extracted_text;
+                    document.getElementById('textLength').textContent = `${data.full_text_length} characters extracted`;
                     document.getElementById('downloadBtn').href = data.download_url;
-                    document.getElementById('resultSection').style.display = 'block';
-                    document.getElementById('processingMessage').style.display = 'none';
+                    document.getElementById('processingSection').style.display = 'none';
+                    document.getElementById('resultsSection').style.display = 'block';
 
-                    // Update credits display
                     updateCreditsDisplay(data.credits_remaining);
-                    
                     showMessage('success', 'Text extracted successfully!');
                 } else {
                     throw new Error(data.detail || 'Extraction failed');
                 }
             } catch (error) {
                 showMessage('error', error.message);
-                document.getElementById('processingMessage').style.display = 'none';
-                extractBtn.disabled = false;
-                document.getElementById('extractBtnText').textContent = 'Extract Text (2 credits)';
+                document.getElementById('processingSection').style.display = 'none';
+                document.querySelector('.upload-section').style.display = 'block';
             }
         });
 
@@ -281,7 +272,6 @@
             }, 2000);
         }
 
-        // Helper functions
         function formatFileSize(bytes) {
             if (bytes === 0) return '0 Bytes';
             const k = 1024;
@@ -291,57 +281,24 @@
         }
 
         function showMessage(type, text) {
-            const existingMessage = document.querySelector('.message');
-            if (existingMessage) existingMessage.remove();
+            const messageBox = document.getElementById('messageBox');
+            messageBox.className = 'message ' + type;
+            messageBox.textContent = text;
+            messageBox.style.display = 'block';
+            setTimeout(() => {
+                messageBox.style.display = 'none';
+            }, 5000);
+        }
 
-            const message = document.createElement('div');
-            message.className = `message ${type}-message`;
-            message.textContent = text;
-            document.querySelector('.container').insertBefore(message, document.querySelector('.container').firstChild);
-
-            setTimeout(() => message.remove(), 5000);
+        function updateCreditsDisplay(credits) {
+            const creditsEl = document.getElementById('userCredits');
+            if (creditsEl) {
+                creditsEl.textContent = `${credits} credits`;
+            }
         }
 
         // Load user data on page load
-        checkAuthAndLoadData();
+        loadUserData();
     </script>
-
-    <style>
-        .upload-zone {
-            border: 2px dashed var(--border-color);
-            border-radius: 12px;
-            padding: 3rem 2rem;
-            text-align: center;
-            background: var(--bg-secondary);
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .upload-zone:hover {
-            border-color: var(--primary-color);
-            background: var(--primary-light);
-        }
-
-        .upload-icon {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-        }
-
-        .upload-text {
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin: 0;
-        }
-
-        .upload-hint {
-            font-size: 0.9rem;
-            opacity: 0.7;
-            margin: 0.5rem 0 0 0;
-        }
-    </style>
 </body>
 </html>
