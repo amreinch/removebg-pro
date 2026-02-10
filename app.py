@@ -1761,6 +1761,296 @@ async def compress_pdf_file(
 
 
 # ============================================================================
+# DOCUMENT CONVERSION (PDF ↔ Word/Excel)
+# ============================================================================
+
+@app.post("/api/convert/pdf-to-word")
+async def convert_pdf_to_word(
+    file: UploadFile = File(...),
+    current_user: User = Depends(require_credits),
+    db: Session = Depends(get_db)
+):
+    """
+    Convert PDF to Word document (costs 2 credits)
+    """
+    if file.content_type != "application/pdf":
+        raise HTTPException(status_code=400, detail="File must be a PDF")
+    
+    contents = await file.read()
+    
+    if len(contents) > 20 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="PDF too large. Max 20MB")
+    
+    try:
+        from pdf2docx import Converter
+        import tempfile
+        
+        start_time = datetime.utcnow()
+        
+        # Create temp files
+        with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as pdf_temp:
+            pdf_temp.write(contents)
+            pdf_path = pdf_temp.name
+        
+        file_id = str(uuid.uuid4())
+        output_filename = f"{file_id}.docx"
+        output_path = OUTPUT_DIR / output_filename
+        
+        # Convert PDF to Word
+        cv = Converter(pdf_path)
+        cv.convert(str(output_path))
+        cv.close()
+        
+        # Cleanup temp file
+        os.unlink(pdf_path)
+        
+        # Get output size
+        output_size = os.path.getsize(output_path)
+        
+        # Deduct 2 credits
+        current_user.use_credit()
+        current_user.use_credit()
+        
+        # Record usage
+        processing_time = int((datetime.utcnow() - start_time).total_seconds() * 1000)
+        
+        usage_record = UsageRecord(
+            user_id=current_user.id,
+            original_filename=file.filename,
+            file_id=file_id,
+            output_format="docx",
+            original_size=len(contents),
+            output_size=output_size,
+            processing_time=processing_time
+        )
+        db.add(usage_record)
+        db.commit()
+        
+        return {
+            "success": True,
+            "file_id": file_id,
+            "download_url": f"/outputs/{output_filename}",
+            "original_size": len(contents),
+            "output_size": output_size,
+            "credits_remaining": current_user.credits_remaining,
+            "timestamp": datetime.utcnow()
+        }
+        
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"PDF to Word conversion error: {str(e)}")
+
+
+@app.post("/api/convert/pdf-to-excel")
+async def convert_pdf_to_excel(
+    file: UploadFile = File(...),
+    current_user: User = Depends(require_credits),
+    db: Session = Depends(get_db)
+):
+    """
+    Extract tables from PDF to Excel (costs 2 credits)
+    """
+    if file.content_type != "application/pdf":
+        raise HTTPException(status_code=400, detail="File must be a PDF")
+    
+    contents = await file.read()
+    
+    if len(contents) > 20 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="PDF too large. Max 20MB")
+    
+    try:
+        from pypdf import PdfReader
+        from openpyxl import Workbook
+        import tempfile
+        
+        start_time = datetime.utcnow()
+        
+        # Create temp file
+        with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as pdf_temp:
+            pdf_temp.write(contents)
+            pdf_path = pdf_temp.name
+        
+        # Extract text from PDF
+        reader = PdfReader(pdf_path)
+        
+        # Create Excel workbook
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Extracted Text"
+        
+        # Extract text from each page
+        row = 1
+        for page_num, page in enumerate(reader.pages, 1):
+            text = page.extract_text()
+            ws.cell(row=row, column=1, value=f"Page {page_num}")
+            row += 1
+            
+            # Split text into lines and add to Excel
+            for line in text.split('\n'):
+                if line.strip():
+                    ws.cell(row=row, column=1, value=line.strip())
+                    row += 1
+            
+            row += 1  # Extra space between pages
+        
+        # Save Excel file
+        file_id = str(uuid.uuid4())
+        output_filename = f"{file_id}.xlsx"
+        output_path = OUTPUT_DIR / output_filename
+        
+        wb.save(output_path)
+        
+        # Cleanup temp file
+        os.unlink(pdf_path)
+        
+        # Get output size
+        output_size = os.path.getsize(output_path)
+        
+        # Deduct 2 credits
+        current_user.use_credit()
+        current_user.use_credit()
+        
+        # Record usage
+        processing_time = int((datetime.utcnow() - start_time).total_seconds() * 1000)
+        
+        usage_record = UsageRecord(
+            user_id=current_user.id,
+            original_filename=file.filename,
+            file_id=file_id,
+            output_format="xlsx",
+            original_size=len(contents),
+            output_size=output_size,
+            processing_time=processing_time
+        )
+        db.add(usage_record)
+        db.commit()
+        
+        return {
+            "success": True,
+            "file_id": file_id,
+            "download_url": f"/outputs/{output_filename}",
+            "original_size": len(contents),
+            "output_size": output_size,
+            "pages_extracted": len(reader.pages),
+            "credits_remaining": current_user.credits_remaining,
+            "timestamp": datetime.utcnow()
+        }
+        
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"PDF to Excel conversion error: {str(e)}")
+
+
+# ============================================================================
+# OCR - TEXT EXTRACTION
+# ============================================================================
+
+@app.post("/api/ocr/extract")
+async def extract_text_ocr(
+    file: UploadFile = File(...),
+    current_user: User = Depends(require_credits),
+    db: Session = Depends(get_db)
+):
+    """
+    Extract text from image or PDF using OCR (costs 2 credits)
+    """
+    allowed_types = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/bmp", "image/tiff", "application/pdf"]
+    
+    if file.content_type not in allowed_types:
+        raise HTTPException(status_code=400, detail="File must be an image or PDF")
+    
+    contents = await file.read()
+    
+    if len(contents) > 20 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="File too large. Max 20MB")
+    
+    try:
+        import pytesseract
+        from PIL import Image
+        from pypdf import PdfReader
+        from pdf2image import convert_from_bytes
+        import tempfile
+        
+        start_time = datetime.utcnow()
+        
+        extracted_text = ""
+        
+        if file.content_type == "application/pdf":
+            # Convert PDF pages to images and OCR each page
+            with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as pdf_temp:
+                pdf_temp.write(contents)
+                pdf_path = pdf_temp.name
+            
+            # First try to extract text directly (if PDF has text layer)
+            reader = PdfReader(pdf_path)
+            has_text = False
+            
+            for page in reader.pages:
+                page_text = page.extract_text()
+                if page_text.strip():
+                    extracted_text += page_text + "\n\n"
+                    has_text = True
+            
+            # If no text found, use OCR on images
+            if not has_text:
+                images = convert_from_bytes(contents, dpi=300)
+                for i, image in enumerate(images, 1):
+                    page_text = pytesseract.image_to_string(image)
+                    extracted_text += f"--- Page {i} ---\n{page_text}\n\n"
+            
+            os.unlink(pdf_path)
+        else:
+            # OCR on image
+            image = Image.open(BytesIO(contents))
+            extracted_text = pytesseract.image_to_string(image)
+        
+        # Save extracted text to file
+        file_id = str(uuid.uuid4())
+        output_filename = f"{file_id}.txt"
+        output_path = OUTPUT_DIR / output_filename
+        
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.write(extracted_text)
+        
+        output_size = os.path.getsize(output_path)
+        
+        # Deduct 2 credits
+        current_user.use_credit()
+        current_user.use_credit()
+        
+        # Record usage
+        processing_time = int((datetime.utcnow() - start_time).total_seconds() * 1000)
+        
+        usage_record = UsageRecord(
+            user_id=current_user.id,
+            original_filename=file.filename,
+            file_id=file_id,
+            output_format="txt",
+            original_size=len(contents),
+            output_size=output_size,
+            processing_time=processing_time
+        )
+        db.add(usage_record)
+        db.commit()
+        
+        return {
+            "success": True,
+            "file_id": file_id,
+            "download_url": f"/outputs/{output_filename}",
+            "extracted_text": extracted_text[:500] + ("..." if len(extracted_text) > 500 else ""),  # Preview
+            "full_text_length": len(extracted_text),
+            "original_size": len(contents),
+            "output_size": output_size,
+            "credits_remaining": current_user.credits_remaining,
+            "timestamp": datetime.utcnow()
+        }
+        
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"OCR extraction error: {str(e)}")
+
+
+# ============================================================================
 # SUPPORT & CONTACT
 # ============================================================================
 

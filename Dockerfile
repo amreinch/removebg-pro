@@ -3,11 +3,16 @@ FROM python:3.11-slim
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies (including fonts for watermark)
+# Install system dependencies (including fonts for watermark, Tesseract OCR, LibreOffice, poppler for PDF)
 RUN apt-get update && apt-get install -y \
     libgl1 \
     libglib2.0-0 \
     fonts-dejavu-core \
+    tesseract-ocr \
+    tesseract-ocr-eng \
+    libreoffice-writer \
+    libreoffice-calc \
+    poppler-utils \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements
