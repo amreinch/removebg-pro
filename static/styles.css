@@ -471,9 +471,17 @@ body {
 
 .tool-card:hover {
     border-color: var(--brand-primary);
-    box-shadow: 0 8px 24px rgba(59, 130, 246, 0.3), var(--shadow-glow);
+    box-shadow: 0 8px 24px rgba(59, 130, 246, 0.4), var(--shadow-glow);
     transform: translateY(-2px);
     background: var(--bg-tertiary);
+}
+
+.tool-card:hover .tool-name {
+    color: var(--brand-primary);
+}
+
+.tool-card:hover .tool-description {
+    color: var(--text-primary);
 }
 
 .tool-card.coming-soon {
