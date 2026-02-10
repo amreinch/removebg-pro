@@ -216,7 +216,7 @@
             const token = localStorage.getItem('token');
             if (!token) {
                 showMessage('error', 'Please login first');
-                window.location.href = '/static/app.html#login';
+                window.location.href = '/static/index.html';
                 return;
             }
 
@@ -294,7 +294,9 @@
         }
 
         // Load user data on page load
-        loadUserData();
+        if (localStorage.getItem('token')) {
+            loadUserProfile();
+        }
     </script>
 </body>
 </html>
