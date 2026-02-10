@@ -975,6 +975,8 @@ body {
 .footer-links {
     display: flex;
     gap: var(--space-6);
+    justify-content: center;
+    flex-wrap: wrap;
 }
 
 .footer-links a {
