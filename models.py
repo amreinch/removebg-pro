@@ -125,3 +125,29 @@ class APIKey(Base):
     
     # Relationship
     user = relationship("User", back_populates="api_keys")
+
+
+class SupportTicket(Base):
+    """Support ticket submissions from users"""
+    __tablename__ = "support_tickets"
+    
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String, ForeignKey("users.id"), nullable=False)
+    
+    # Ticket content
+    subject = Column(String, nullable=False)
+    message = Column(String, nullable=False)  # Using String (TEXT) instead of Column type
+    
+    # Status tracking
+    status = Column(String, default="open")  # open, in_progress, closed
+    priority = Column(String, default="normal")  # low, normal, high
+    
+    # User info at time of submission (snapshot)
+    user_email = Column(String)
+    user_credits_purchased = Column(Integer)
+    user_support_tier = Column(String)
+    
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    closed_at = Column(DateTime, nullable=True)

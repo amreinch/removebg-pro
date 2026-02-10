@@ -93,11 +93,8 @@
         async function init() {
             const token = localStorage.getItem('token');
             if (!token) {
-                // Not logged in - that's OK, show guest support
-                document.getElementById('supportLevel').textContent = 'Community Support';
-                document.getElementById('responseTime').textContent = "We'll review your message and respond when possible.";
-                document.getElementById('userButtons').style.display = 'none';
-                document.getElementById('authButtons').style.display = 'flex';
+                // Not logged in - redirect to home
+                window.location.href = '/static/index.html#pricing';
                 return;
             }
             
@@ -119,12 +116,10 @@
                 
                 // Check if free tier user (no purchases)
                 if (currentUser.credits_purchased_total === 0) {
-                    // Show upgrade message for free tier
-                    document.getElementById('supportLevel').textContent = 'Free Tier';
-                    document.getElementById('responseTime').innerHTML = 'Support is only available for paying customers. <a href="/static/index.html#pricing" style="color: var(--primary); text-decoration: underline;">Purchase a credit pack</a> to access email support.';
-                    // Disable form
-                    document.getElementById('supportForm').style.opacity = '0.5';
-                    document.getElementById('supportForm').style.pointerEvents = 'none';
+                    // Redirect free tier to pricing page
+                    alert('⚠️ Support is only available for paying customers.\n\nPlease purchase a credit pack to access support.');
+                    window.location.href = '/static/index.html#pricing';
+                    return;
                 } else {
                     // Update support tier info (comes from API based on lifetime purchases)
                     document.getElementById('supportLevel').textContent = currentUser.support_tier || 'Email Support';
