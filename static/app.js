@@ -46,6 +46,11 @@ function setupEventListeners() {
     const uploadArea = document.getElementById('uploadArea');
     const fileInput = document.getElementById('fileInput');
     
+    // Skip if page has custom handlers (check for data-custom-handlers attribute)
+    if (uploadArea && uploadArea.hasAttribute('data-custom-handlers')) {
+        return;
+    }
+    
     if (uploadArea && fileInput) {
         uploadArea.addEventListener('click', () => fileInput.click());
         fileInput.addEventListener('change', (e) => {
@@ -329,11 +334,20 @@ function handleFile(file) {
     }
     
     selectedFile = file;
-    document.getElementById('processBtn').disabled = false;
+    
+    // Only enable button if it exists (not all pages use processBtn)
+    const processBtn = document.getElementById('processBtn');
+    if (processBtn) {
+        processBtn.disabled = false;
+    }
     
     const uploadArea = document.getElementById('uploadArea');
-    uploadArea.querySelector('h3').textContent = file.name;
-    uploadArea.querySelector('p').textContent = `${(file.size / 1024).toFixed(0)} KB - Ready to process`;
+    if (uploadArea) {
+        const h3 = uploadArea.querySelector('h3');
+        const p = uploadArea.querySelector('p');
+        if (h3) h3.textContent = file.name;
+        if (p) p.textContent = `${(file.size / 1024).toFixed(0)} KB - Ready to process`;
+    }
 }
 
 // Image processing

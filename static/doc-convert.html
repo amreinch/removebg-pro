@@ -72,7 +72,7 @@
                     </div>
                 </div>
 
-                <div class="upload-area" id="uploadArea">
+                <div class="upload-area" id="uploadArea" data-custom-handlers="true">
                     <svg width="64" height="64" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
                     </svg>
@@ -142,7 +142,7 @@
 
     <script src="/static/app.js"></script>
     <script>
-        let selectedFile = null;
+        // Uses global selectedFile from app.js
         let conversionType = 'pdf-to-word';
 
         // Conversion type selection
