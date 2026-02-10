@@ -1,4 +1,4 @@
-# QuickTools - Professional Automation Platform
+# Toolry - Professional Automation Platform
 
 **Status:** 🚀 Production Ready  
 **Built:** 2026-02-07 to 2026-02-08  
@@ -6,9 +6,9 @@
 
 ---
 
-## 🎯 What is QuickTools?
+## 🎯 What is Toolry?
 
-QuickTools is a professional automation platform that makes everyday tasks instant. Remove backgrounds, process images, merge PDFs, generate QR codes, and more - all in one place.
+Toolry is a professional automation platform that makes everyday tasks instant. Remove backgrounds, process images, merge PDFs, generate QR codes, and more - all in one place.
 
 **Mission:** Replace 10 different SaaS subscriptions with one simple platform.
 
@@ -140,7 +140,7 @@ See `STRIPE_SETUP.md` for complete Stripe configuration guide.
 
 ## 🎨 Brand
 
-**Name:** QuickTools  
+**Name:** Toolry  
 **Tagline:** Professional tools, instantly  
 **Colors:** Blue (#3B82F6) + Purple (#8B5CF6) gradient  
 **Font:** Inter  
@@ -219,7 +219,7 @@ This is a private project. For questions or suggestions, contact via the support
 
 ## 📄 License
 
-All rights reserved © 2026 QuickTools
+All rights reserved © 2026 Toolry
 
 ---
 

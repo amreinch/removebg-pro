@@ -1,4 +1,4 @@
-# ✅ QuickTools SEO Optimization - COMPLETE!
+# ✅ Toolry SEO Optimization - COMPLETE!
 
 **Date:** 2026-02-10  
 **Status:** 100% Complete - Ready for Deployment
@@ -154,7 +154,7 @@ Every tool page now has comprehensive SEO optimization:
 8. **Launch on platforms:**
    - ProductHunt (best for SaaS tools)
    - Reddit r/SideProject
-   - Hacker News "Show HN: QuickTools"
+   - Hacker News "Show HN: Toolry"
    - Twitter/X with #buildinpublic
 
 9. **List on directories:**

@@ -10,7 +10,7 @@ Disallow: /outputs/
 Disallow: /uploads/
 
 # Sitemap location
-Sitemap: https://quicktools.io/sitemap.xml
+Sitemap: https://toolry.app/sitemap.xml
 
 # Crawl delay (optional - prevents overloading server)
 Crawl-delay: 1

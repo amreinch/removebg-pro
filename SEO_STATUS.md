@@ -1,4 +1,4 @@
-# QuickTools SEO Status & Plan
+# Toolry SEO Status & Plan
 
 ## ✅ COMPLETED (2026-02-10)
 
@@ -11,7 +11,7 @@
 ### 2. Meta Tags Added (6 Major Pages)
 
 **Homepage (index.html)**
-- Title: "QuickTools - Free Online Image & PDF Tools | Background Remover, OCR, PDF Converter"
+- Title: "Toolry - Free Online Image & PDF Tools | Background Remover, OCR, PDF Converter"
 - Keywords: remove background, pdf to word, ocr online, compress image, pdf tools
 - Open Graph + Twitter Card for social sharing
 

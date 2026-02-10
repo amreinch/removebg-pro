@@ -6,7 +6,7 @@
 
   <!-- Homepage -->
   <url>
-    <loc>https://quicktools.io/</loc>
+    <loc>https://toolry.app/</loc>
     <lastmod>2026-02-10</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
@@ -14,77 +14,77 @@
 
   <!-- Main Tools (High Priority) -->
   <url>
-    <loc>https://quicktools.io/bg-remover</loc>
+    <loc>https://toolry.app/bg-remover</loc>
     <lastmod>2026-02-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
 
   <url>
-    <loc>https://quicktools.io/ocr</loc>
+    <loc>https://toolry.app/ocr</loc>
     <lastmod>2026-02-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
 
   <url>
-    <loc>https://quicktools.io/doc-convert</loc>
+    <loc>https://toolry.app/doc-convert</loc>
     <lastmod>2026-02-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
 
   <url>
-    <loc>https://quicktools.io/pdf-tools</loc>
+    <loc>https://toolry.app/pdf-tools</loc>
     <lastmod>2026-02-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
 
   <url>
-    <loc>https://quicktools.io/compress</loc>
+    <loc>https://toolry.app/compress</loc>
     <lastmod>2026-02-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <url>
-    <loc>https://quicktools.io/resize</loc>
+    <loc>https://toolry.app/resize</loc>
     <lastmod>2026-02-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <url>
-    <loc>https://quicktools.io/crop</loc>
+    <loc>https://toolry.app/crop</loc>
     <lastmod>2026-02-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <url>
-    <loc>https://quicktools.io/convert</loc>
+    <loc>https://toolry.app/convert</loc>
     <lastmod>2026-02-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <url>
-    <loc>https://quicktools.io/watermark</loc>
+    <loc>https://toolry.app/watermark</loc>
     <lastmod>2026-02-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
 
   <url>
-    <loc>https://quicktools.io/qr-code</loc>
+    <loc>https://toolry.app/qr-code</loc>
     <lastmod>2026-02-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
 
   <url>
-    <loc>https://quicktools.io/barcode</loc>
+    <loc>https://toolry.app/barcode</loc>
     <lastmod>2026-02-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
@@ -92,21 +92,21 @@
 
   <!-- Static Pages -->
   <url>
-    <loc>https://quicktools.io/pricing</loc>
+    <loc>https://toolry.app/pricing</loc>
     <lastmod>2026-02-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <url>
-    <loc>https://quicktools.io/support</loc>
+    <loc>https://toolry.app/support</loc>
     <lastmod>2026-02-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
 
   <url>
-    <loc>https://quicktools.io/api-keys</loc>
+    <loc>https://toolry.app/api-keys</loc>
     <lastmod>2026-02-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
@@ -114,21 +114,21 @@
 
   <!-- Legal Pages (Low Priority) -->
   <url>
-    <loc>https://quicktools.io/privacy</loc>
+    <loc>https://toolry.app/privacy</loc>
     <lastmod>2026-02-10</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
 
   <url>
-    <loc>https://quicktools.io/terms</loc>
+    <loc>https://toolry.app/terms</loc>
     <lastmod>2026-02-10</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
 
   <url>
-    <loc>https://quicktools.io/impressum</loc>
+    <loc>https://toolry.app/impressum</loc>
     <lastmod>2026-02-10</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.2</priority>

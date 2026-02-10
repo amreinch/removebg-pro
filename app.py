@@ -1,5 +1,5 @@
 """
-QuickTools - Professional Automation Platform
+Toolry - Professional Automation Platform
 Main application file
 
 Multi-tool SaaS platform for quick professional tasks:
@@ -45,7 +45,7 @@ from watermark import add_watermark
 
 # Initialize app
 app = FastAPI(
-    title="QuickTools API",
+    title="Toolry API",
     description="Professional automation platform - Quick tools for everyday tasks",
     version="1.0.0"
 )
@@ -157,7 +157,7 @@ async def home():
     html_path = Path("static/index.html")
     if html_path.exists():
         return HTMLResponse(content=html_path.read_text())
-    return HTMLResponse(content="<h1>QuickTools API</h1><p>Visit /docs for API documentation.</p>")
+    return HTMLResponse(content="<h1>Toolry API</h1><p>Visit /docs for API documentation.</p>")
 
 
 @app.get("/api/health")

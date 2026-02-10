@@ -11,7 +11,7 @@ Add this right after `<meta name="viewport">` in each page's `<head>`:
 <title>[SEO-OPTIMIZED TITLE]</title>
 <meta name="description" content="[150-160 char description with keywords]">
 <meta name="keywords" content="[comma, separated, keywords]">
-<meta name="author" content="QuickTools">
+<meta name="author" content="Toolry">
 
 <!-- Open Graph / Facebook -->
 <meta property="og:type" content="website">
@@ -37,10 +37,10 @@ Add this right after `<meta name="viewport">` in each page's `<head>`:
 
 ```html
 <!-- SEO Meta Tags -->
-<title>Free PDF Tools - Merge, Split, Compress PDF Online | QuickTools</title>
+<title>Free PDF Tools - Merge, Split, Compress PDF Online | Toolry</title>
 <meta name="description" content="Free online PDF tools. Merge multiple PDFs, split PDF pages, compress PDF file size. No software installation. Works in browser. Fast, secure, and easy.">
 <meta name="keywords" content="merge pdf, split pdf, compress pdf, pdf tools, combine pdf, pdf merger, pdf splitter, reduce pdf size, pdf compressor free">
-<meta name="author" content="QuickTools">
+<meta name="author" content="Toolry">
 
 <!-- Open Graph / Facebook -->
 <meta property="og:type" content="website">
@@ -66,10 +66,10 @@ Add this right after `<meta name="viewport">` in each page's `<head>`:
 
 ```html
 <!-- SEO Meta Tags -->
-<title>Crop Image Online Free - Image Cropper Tool | QuickTools</title>
+<title>Crop Image Online Free - Image Cropper Tool | Toolry</title>
 <meta name="description" content="Free online image cropper. Crop images to any aspect ratio: 1:1 (Instagram), 16:9 (YouTube), 4:3, custom sizes. Interactive drag-to-crop. Fast and easy.">
 <meta name="keywords" content="crop image, image cropper, crop photo, cut image, crop picture, instagram crop, crop image online, aspect ratio crop">
-<meta name="author" content="QuickTools">
+<meta name="author" content="Toolry">
 
 <!-- Open Graph / Facebook -->
 <meta property="og:type" content="website">
@@ -95,10 +95,10 @@ Add this right after `<meta name="viewport">` in each page's `<head>`:
 
 ```html
 <!-- SEO Meta Tags -->
-<title>Image Format Converter - Convert PNG, JPG, WebP Online Free | QuickTools</title>
+<title>Image Format Converter - Convert PNG, JPG, WebP Online Free | Toolry</title>
 <meta name="description" content="Free image format converter. Convert images between PNG, JPG, JPEG, WebP, BMP, TIFF. Batch convert multiple images. Adjust quality. Fast and secure.">
 <meta name="keywords" content="convert image, image converter, png to jpg, jpg to png, webp converter, image format, convert photo, png to webp">
-<meta name="author" content="QuickTools">
+<meta name="author" content="Toolry">
 
 <!-- Open Graph / Facebook -->
 <meta property="og:type" content="website">
@@ -124,10 +124,10 @@ Add this right after `<meta name="viewport">` in each page's `<head>`:
 
 ```html
 <!-- SEO Meta Tags -->
-<title>Add Watermark to Image Online Free - Text Watermark Tool | QuickTools</title>
+<title>Add Watermark to Image Online Free - Text Watermark Tool | Toolry</title>
 <meta name="description" content="Free watermark tool. Add custom text watermarks to images. Choose position, opacity, tiled patterns. Protect photos, brand images. Perfect for photographers.">
 <meta name="keywords" content="watermark image, add watermark, watermark photo, image watermark, text watermark, brand watermark, protect image, copyright watermark">
-<meta name="author" content="QuickTools">
+<meta name="author" content="Toolry">
 
 <!-- Open Graph / Facebook -->
 <meta property="og:type" content="website">
@@ -153,10 +153,10 @@ Add this right after `<meta name="viewport">` in each page's `<head>`:
 
 ```html
 <!-- SEO Meta Tags -->
-<title>Free QR Code Generator - Create Custom QR Codes Online | QuickTools</title>
+<title>Free QR Code Generator - Create Custom QR Codes Online | Toolry</title>
 <meta name="description" content="Free QR code generator. Create QR codes for URLs, text, WiFi, vCard. Customize size and download as PNG. Perfect for marketing, menus, business cards.">
 <meta name="keywords" content="qr code generator, create qr code, qr code maker, generate qr code, custom qr code, qr code free, qr generator online">
-<meta name="author" content="QuickTools">
+<meta name="author" content="Toolry">
 
 <!-- Open Graph / Facebook -->
 <meta property="og:type" content="website">
@@ -182,10 +182,10 @@ Add this right after `<meta name="viewport">` in each page's `<head>`:
 
 ```html
 <!-- SEO Meta Tags -->
-<title>Free Barcode Generator - Create UPC, EAN, Code128 Barcodes | QuickTools</title>
+<title>Free Barcode Generator - Create UPC, EAN, Code128 Barcodes | Toolry</title>
 <meta name="description" content="Free barcode generator. Create UPC, EAN, Code128, Code39 barcodes. Perfect for products, inventory, labels. Download as PNG. Fast and easy.">
 <meta name="keywords" content="barcode generator, create barcode, upc generator, ean generator, code128, barcode maker, generate barcode free">
-<meta name="author" content="QuickTools">
+<meta name="author" content="Toolry">
 
 <!-- Open Graph / Facebook -->
 <meta property="og:type" content="website">
