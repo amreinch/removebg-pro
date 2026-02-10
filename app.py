@@ -767,6 +767,113 @@ async def generate_qr(
         raise HTTPException(status_code=500, detail=f"QR generation error: {str(e)}")
 
 
+@app.post("/api/barcode/generate")
+async def generate_barcode_endpoint(
+    data: str = Form(...),
+    barcode_type: str = Form("code128"),
+    show_text: bool = Form(True),
+    current_user: User = Depends(require_credits),
+    db: Session = Depends(get_db)
+):
+    """
+    Generate a barcode (costs 1 credit)
+    
+    Args:
+        data: Data to encode
+        barcode_type: code128, code39, ean13, upca, etc.
+        show_text: Whether to show human-readable text below barcode
+    """
+    try:
+        import barcode
+        from barcode.writer import ImageWriter
+        import io as barcode_io
+        
+        start_time = datetime.utcnow()
+        
+        # Validate and clean data based on type
+        data = data.strip()
+        
+        # Map frontend names to barcode library names
+        type_map = {
+            'code128': 'code128',
+            'code39': 'code39',
+            'ean13': 'ean13',
+            'ean8': 'ean8',
+            'upca': 'upca',
+            'jan': 'jan',
+            'isbn13': 'isbn13',
+            'isbn10': 'isbn10',
+            'issn': 'issn'
+        }
+        
+        barcode_class_name = type_map.get(barcode_type.lower(), 'code128')
+        
+        # Get barcode class
+        try:
+            barcode_class = barcode.get_barcode_class(barcode_class_name)
+        except:
+            raise HTTPException(status_code=400, detail=f"Invalid barcode type: {barcode_type}")
+        
+        # Generate barcode
+        try:
+            barcode_instance = barcode_class(data, writer=ImageWriter())
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Invalid data for {barcode_type}: {str(e)}")
+        
+        # Save to bytes
+        buffer = barcode_io.BytesIO()
+        barcode_instance.write(buffer, options={
+            'module_width': 0.3,
+            'module_height': 12.0,
+            'quiet_zone': 2.5,
+            'font_size': 10,
+            'text_distance': 5.0,
+            'write_text': show_text
+        })
+        barcode_bytes = buffer.getvalue()
+        
+        # Generate unique ID
+        file_id = str(uuid.uuid4())
+        output_filename = f"{file_id}_barcode.png"
+        output_path = OUTPUT_DIR / output_filename
+        
+        # Save file
+        with open(output_path, "wb") as f:
+            f.write(barcode_bytes)
+        
+        # Deduct credit
+        current_user.use_credit()
+        
+        # Record usage
+        processing_time = int((datetime.utcnow() - start_time).total_seconds() * 1000)
+        usage_record = UsageRecord(
+            user_id=current_user.id,
+            original_filename=f"barcode_{data[:30]}",
+            file_id=file_id,
+            output_format="png",
+            original_size=len(data),
+            output_size=len(barcode_bytes),
+            processing_time=processing_time
+        )
+        db.add(usage_record)
+        db.commit()
+        
+        return {
+            "success": True,
+            "file_id": file_id,
+            "download_url": f"/outputs/{output_filename}",
+            "barcode_type": barcode_type,
+            "credits_remaining": current_user.credits_remaining,
+            "timestamp": datetime.utcnow()
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Barcode generation error: {str(e)}")
+
+
 # ============================================================================
 # IMAGE RESIZE
 # ============================================================================

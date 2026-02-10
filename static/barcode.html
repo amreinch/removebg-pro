@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Barcode Generator - QuickTools</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-content">
+                <a href="/static/index.html" class="logo">
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                        <rect width="32" height="32" rx="8" fill="url(#gradient)"/>
+                        <path d="M16 8L24 16L16 24L8 16L16 8Z" fill="white"/>
+                        <defs>
+                            <linearGradient id="gradient" x1="0" y1="0" x2="32" y2="32">
+                                <stop offset="0%" stop-color="#3B82F6"/>
+                                <stop offset="100%" stop-color="#8B5CF6"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                    <span>QuickTools</span>
+                </a>
+                
+                <div class="nav-links">
+                    <a href="/static/index.html#tools" class="nav-link">Tools</a>
+                    <a href="/static/index.html#pricing" class="nav-link">Pricing</a>
+                    <a href="/static/support.html" class="nav-link">Support</a>
+                    <a href="/static/api-keys.html" class="nav-link" id="apiKeysNav" style="display: none;">API</a>
+                </div>
+                
+                <div class="nav-actions">
+                    <div id="authButtons">
+                        <a href="/static/index.html" class="btn btn-text">Back to Home</a>
+                    </div>
+                    <div id="userButtons" style="display: none;">
+                        <div class="user-menu">
+                            <span class="user-email" id="userEmail"></span>
+                            <span class="user-credits" id="userCredits">0 credits</span>
+                            <button class="btn btn-text" onclick="logout()">Logout</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container" style="max-width: 600px; padding-top: var(--space-12); padding-bottom: var(--space-12);">
+            
+            <h2 class="workspace-title" style="margin-bottom: var(--space-8);">Barcode Generator</h2>
+            
+            <div class="message" id="messageBox" style="display: none;"></div>
+            
+            <!-- Form Section -->
+            <div class="tool-workspace">
+                <form id="barcodeForm">
+                    <div class="form-section">
+                        <label class="form-label">Barcode Type</label>
+                        <select id="barcodeType" class="form-select" required>
+                            <option value="code128">Code 128 (General purpose)</option>
+                            <option value="code39">Code 39 (Alphanumeric)</option>
+                            <option value="ean13">EAN-13 (13 digits)</option>
+                            <option value="ean8">EAN-8 (8 digits)</option>
+                            <option value="upca">UPC-A (12 digits)</option>
+                            <option value="isbn13">ISBN-13 (Books)</option>
+                            <option value="isbn10">ISBN-10 (Books)</option>
+                        </select>
+                        <p class="form-help" id="typeHelp">General purpose barcode for text and numbers</p>
+                    </div>
+
+                    <div class="form-section">
+                        <label class="form-label">Data</label>
+                        <input type="text" id="barcodeData" class="form-input" placeholder="Enter data to encode" required>
+                        <p class="form-help" id="dataHelp">Enter the data you want to encode</p>
+                    </div>
+
+                    <div class="form-section">
+                        <label style="display: flex; align-items: center; gap: var(--space-2); cursor: pointer;">
+                            <input type="checkbox" id="showText" checked style="width: 18px; height: 18px; cursor: pointer;">
+                            <span class="form-label" style="margin: 0;">Show text below barcode</span>
+                        </label>
+                        <p class="form-help">Uncheck to hide the human-readable text</p>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-large w-full" id="generateBtn">
+                        Generate Barcode (1 credit)
+                    </button>
+                </form>
+            </div>
+
+            <!-- Results Section -->
+            <div id="resultsSection" class="tool-workspace" style="display: none; margin-top: var(--space-8);">
+                <h3 style="font-size: var(--text-xl); font-weight: 700; margin-bottom: var(--space-4);">✅ Barcode Generated!</h3>
+                
+                <div style="background: white; padding: var(--space-6); border-radius: var(--radius-lg); border: 1px solid var(--gray-200); margin-bottom: var(--space-4); text-align: center;">
+                    <img id="barcodeImage" alt="Generated Barcode" style="max-width: 100%; height: auto;">
+                </div>
+
+                <a id="downloadLink" href="#" download="barcode.png" class="btn btn-primary btn-large w-full" style="margin-bottom: var(--space-3);">
+                    💾 Download Barcode
+                </a>
+                <button class="btn btn-secondary btn-large w-full" onclick="resetForm()">
+                    Generate Another Barcode
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const API_BASE = window.location.origin;
+
+        // Barcode type help text
+        const typeHelp = {
+            'code128': 'General purpose barcode for text and numbers',
+            'code39': 'Alphanumeric barcode (A-Z, 0-9, and special characters)',
+            'ean13': 'Product barcodes (13 digits, e.g., 5901234123457)',
+            'ean8': 'Short product barcodes (8 digits)',
+            'upca': 'US product barcodes (12 digits)',
+            'isbn13': 'Book ISBN (13 digits, e.g., 978-0-596-52068-7)',
+            'isbn10': 'Book ISBN (10 digits, e.g., 0-596-52068-9)'
+        };
+
+        const dataHelp = {
+            'code128': 'Any text or numbers',
+            'code39': 'Letters (A-Z), numbers (0-9), and -.$/:+%',
+            'ean13': '13 digits (e.g., 5901234123457)',
+            'ean8': '8 digits',
+            'upca': '12 digits',
+            'isbn13': '13 digits starting with 978 or 979',
+            'isbn10': '10 digits'
+        };
+
+        // Initialize
+        async function init() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/static/index.html';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/auth/me`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) throw new Error('Auth failed');
+
+                const userData = await response.json();
+                document.getElementById('authButtons').style.display = 'none';
+                document.getElementById('userButtons').style.display = 'flex';
+                document.getElementById('userEmail').textContent = userData.email;
+                document.getElementById('userCredits').textContent = `${userData.credits_balance} credits`;
+
+                if (userData.api_access_unlocked) {
+                    document.getElementById('apiKeysNav').style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Auth error:', error);
+                localStorage.removeItem('token');
+                window.location.href = '/static/index.html';
+            }
+        }
+
+        init();
+
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = '/static/index.html';
+        }
+
+        // Update help text when type changes
+        document.getElementById('barcodeType').addEventListener('change', (e) => {
+            const type = e.target.value;
+            document.getElementById('typeHelp').textContent = typeHelp[type];
+            document.getElementById('dataHelp').textContent = dataHelp[type];
+        });
+
+        // Form submission
+        document.getElementById('barcodeForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const token = localStorage.getItem('token');
+            if (!token) {
+                showMessage('Please sign in to use this tool', 'error');
+                window.location.href = '/static/index.html';
+                return;
+            }
+
+            const data = document.getElementById('barcodeData').value;
+            const barcodeType = document.getElementById('barcodeType').value;
+            const showText = document.getElementById('showText').checked;
+            const generateBtn = document.getElementById('generateBtn');
+
+            generateBtn.disabled = true;
+            generateBtn.textContent = 'Generating...';
+
+            const formData = new FormData();
+            formData.append('data', data);
+            formData.append('barcode_type', barcodeType);
+            formData.append('show_text', showText);
+
+            try {
+                const response = await fetch('/api/barcode/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: formData
+                });
+
+                const result = await response.json();
+                
+                // Check if out of credits (403 status)
+                if (response.status === 403 && result.detail && result.detail.includes('No credits remaining')) {
+                    showMessage('⚠️ No credits remaining. Redirecting to pricing...', 'error');
+                    setTimeout(() => {
+                        window.location.href = '/static/index.html#pricing';
+                    }, 1500);
+                    return;
+                }
+
+                if (result.success) {
+                    document.getElementById('barcodeImage').src = result.download_url;
+                    document.getElementById('downloadLink').href = result.download_url;
+                    document.getElementById('resultsSection').style.display = 'block';
+                    document.getElementById('userCredits').textContent = `${result.credits_remaining} credits`;
+                    showMessage('Barcode generated successfully!', 'success');
+                    
+                    // Scroll to results
+                    document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+                } else {
+                    showMessage(result.detail || 'Barcode generation failed', 'error');
+                }
+            } catch (error) {
+                showMessage('Error generating barcode: ' + error.message, 'error');
+            } finally {
+                generateBtn.disabled = false;
+                generateBtn.textContent = 'Generate Barcode (1 credit)';
+            }
+        });
+
+        function resetForm() {
+            document.getElementById('barcodeForm').reset();
+            document.getElementById('resultsSection').style.display = 'none';
+            document.getElementById('barcodeData').value = '';
+            document.getElementById('showText').checked = true;
+            document.getElementById('typeHelp').textContent = typeHelp['code128'];
+            document.getElementById('dataHelp').textContent = dataHelp['code128'];
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function showMessage(text, type) {
+            const box = document.getElementById('messageBox');
+            box.textContent = text;
+            box.className = `message message-${type}`;
+            box.style.display = 'block';
+            setTimeout(() => box.style.display = 'none', 5000);
+        }
+    </script>
+</body>
+</html>
