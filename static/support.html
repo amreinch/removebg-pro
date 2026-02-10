@@ -117,30 +117,25 @@
                 document.getElementById('userEmail').textContent = currentUser.email;
                 document.getElementById('userCredits').textContent = `${currentUser.credits_balance} credits`;
                 
-                // Show API nav if Pro/Business
-                if (currentUser.api_access_unlocked) {
-                    document.getElementById('apiKeysNav').style.display = 'block';
-                }
-                
-                // Update support tier info (comes from API based on lifetime purchases)
-                document.getElementById('supportLevel').textContent = currentUser.support_tier || 'Community';
-                
-                // Set response time based on support tier
-                if (currentUser.support_tier && currentUser.support_tier.includes('Dedicated')) {
-                    document.getElementById('responseTime').textContent = "We'll respond within 12 hours.";
-                } else if (currentUser.support_tier && currentUser.support_tier.includes('Priority')) {
-                    document.getElementById('responseTime').textContent = "We'll respond within 24 hours.";
-                } else if (currentUser.support_tier && currentUser.support_tier.includes('Email')) {
-                    document.getElementById('responseTime').textContent = "We'll respond within 48 hours via email.";
+                // Check if free tier user (no purchases)
+                if (currentUser.credits_purchased_total === 0) {
+                    // Show upgrade message for free tier
+                    document.getElementById('supportLevel').textContent = 'Free Tier';
+                    document.getElementById('responseTime').innerHTML = 'Support is only available for paying customers. <a href="/static/index.html#pricing" style="color: var(--primary); text-decoration: underline;">Purchase a credit pack</a> to access email support.';
+                    // Disable form
+                    document.getElementById('supportForm').style.opacity = '0.5';
+                    document.getElementById('supportForm').style.pointerEvents = 'none';
                 } else {
-                    document.getElementById('responseTime').textContent = "We'll review your message and respond when possible.";
+                    // Update support tier info (comes from API based on lifetime purchases)
+                    document.getElementById('supportLevel').textContent = currentUser.support_tier || 'Email Support';
+                    document.getElementById('responseTime').textContent = "We'll respond to your message as soon as possible.";
                 }
                 
             } catch (error) {
                 console.error('Init error:', error);
                 // Show guest support
-                document.getElementById('supportLevel').textContent = 'Community Support';
-                document.getElementById('responseTime').textContent = "We'll review your message and respond when possible.";
+                document.getElementById('supportLevel').textContent = 'Not Logged In';
+                document.getElementById('responseTime').textContent = "Please sign in to access support.";
             }
         }
         

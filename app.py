@@ -2064,12 +2064,16 @@ async def contact_support(
     """
     Submit a support request
     
-    Support levels:
-    - Free: Community support (email saved, manual review)
-    - Basic: Email support (48h response)
-    - Pro: Priority support (24h response)
-    - Business: Priority support (12h response)
+    Support is only available for paying customers (purchased at least one credit pack).
+    Free tier users must purchase credits to access support.
     """
+    # Check if user has purchased credits (not free tier)
+    if current_user.credits_purchased_total == 0:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Support is only available for paying customers. Please purchase a credit pack to access support."
+        )
+    
     # Get support tier from user property (based on lifetime purchases)
     support_tier = current_user.support_tier
     
