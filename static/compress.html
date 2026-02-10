@@ -115,22 +115,22 @@
                         <div class="quality-presets" style="display: flex; gap: var(--space-3); margin-bottom: var(--space-4);">
                             <button type="button" class="preset-btn" data-quality="95">
                                 <strong>Light</strong>
-                                <span style="font-size: var(--text-sm); color: var(--gray-600);">95% quality</span>
+                                <span style="font-size: var(--text-sm); color: var(--text-secondary);">95% quality</span>
                             </button>
                             <button type="button" class="preset-btn active" data-quality="85">
                                 <strong>Medium</strong>
-                                <span style="font-size: var(--text-sm); color: var(--gray-600);">85% quality</span>
+                                <span style="font-size: var(--text-sm); color: var(--text-secondary);">85% quality</span>
                             </button>
                             <button type="button" class="preset-btn" data-quality="70">
                                 <strong>Heavy</strong>
-                                <span style="font-size: var(--text-sm); color: var(--gray-600);">70% quality</span>
+                                <span style="font-size: var(--text-sm); color: var(--text-secondary);">70% quality</span>
                             </button>
                         </div>
 
                         <div>
                             <label class="form-label">Custom Quality: <span id="qualityValue">85</span>%</label>
                             <input type="range" id="qualitySlider" min="1" max="100" value="85" style="width: 100%;">
-                            <p style="font-size: var(--text-sm); color: var(--gray-600); margin-top: var(--space-2);">
+                            <p style="font-size: var(--text-sm); color: var(--text-secondary); margin-top: var(--space-2);">
                                 Higher = Better quality but less compression. 70-85% is recommended.
                             </p>
                         </div>
@@ -145,7 +145,7 @@
             <!-- Processing -->
             <div id="processingSection" style="display: none; text-align: center; padding: var(--space-12) 0;">
                 <div class="spinner"></div>
-                <p style="margin-top: var(--space-4); color: var(--gray-600);">Compressing image...</p>
+                <p style="margin-top: var(--space-4); color: var(--text-secondary);">Compressing image...</p>
             </div>
 
             <!-- Results -->
@@ -163,26 +163,26 @@
                         <span class="image-label">Compressed (Preview)</span>
                     </div>
                 </div>
-                <p style="font-size: var(--text-sm); color: var(--gray-600); margin-bottom: var(--space-4); text-align: center;">
+                <p style="font-size: var(--text-sm); color: var(--text-secondary); margin-bottom: var(--space-4); text-align: center;">
                     Preview has watermark • Download to get clean version
                 </p>
                 
-                <div class="result-card" style="background: var(--gray-50); padding: var(--space-4); border-radius: var(--radius-lg); margin-bottom: var(--space-4);">
+                <div class="result-card" style="background: var(--bg-secondary); padding: var(--space-4); border-radius: var(--radius-lg); margin-bottom: var(--space-4);">
                     <div style="display: grid; gap: var(--space-3);">
                         <div style="display: flex; justify-content: space-between;">
-                            <span style="color: var(--gray-600);">Original size:</span>
+                            <span style="color: var(--text-secondary);">Original size:</span>
                             <strong id="originalSize">-</strong>
                         </div>
                         <div style="display: flex; justify-content: space-between;">
-                            <span style="color: var(--gray-600);">Compressed size:</span>
+                            <span style="color: var(--text-secondary);">Compressed size:</span>
                             <strong id="compressedSize">-</strong>
                         </div>
                         <div style="display: flex; justify-content: space-between; padding-top: var(--space-3); border-top: 1px solid var(--gray-200);">
-                            <span style="color: var(--gray-600);">Saved:</span>
+                            <span style="color: var(--text-secondary);">Saved:</span>
                             <strong id="savedSize" style="color: var(--success); font-size: var(--text-lg);">-</strong>
                         </div>
                         <div style="display: flex; justify-content: space-between;">
-                            <span style="color: var(--gray-600);">Reduction:</span>
+                            <span style="color: var(--text-secondary);">Reduction:</span>
                             <strong id="reductionPercent" style="color: var(--success); font-size: var(--text-lg);">-</strong>
                         </div>
                     </div>

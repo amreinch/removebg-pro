@@ -98,7 +98,7 @@
                         <div style="margin-bottom: var(--space-4);">
                             <label class="form-label">Watermark Text</label>
                             <input type="text" id="watermarkText" class="form-input" placeholder="© 2026 Your Name" maxlength="100" required>
-                            <p style="font-size: var(--text-sm); color: var(--gray-600); margin-top: var(--space-2);">
+                            <p style="font-size: var(--text-sm); color: var(--text-secondary); margin-top: var(--space-2);">
                                 Max 100 characters. Examples: "© 2026 Your Name", "CONFIDENTIAL", "DRAFT"
                             </p>
                         </div>
@@ -120,7 +120,7 @@
                         <div>
                             <label class="form-label">Opacity: <span id="opacityValue">60</span>%</label>
                             <input type="range" id="opacitySlider" min="10" max="100" value="60" style="width: 100%;">
-                            <p style="font-size: var(--text-sm); color: var(--gray-600); margin-top: var(--space-2);">
+                            <p style="font-size: var(--text-sm); color: var(--text-secondary); margin-top: var(--space-2);">
                                 Lower = More transparent, Higher = More visible
                             </p>
                         </div>
@@ -135,7 +135,7 @@
             <!-- Processing -->
             <div id="processingSection" style="display: none; text-align: center; padding: var(--space-12) 0;">
                 <div class="spinner"></div>
-                <p style="margin-top: var(--space-4); color: var(--gray-600);">Adding watermark...</p>
+                <p style="margin-top: var(--space-4); color: var(--text-secondary);">Adding watermark...</p>
             </div>
 
             <!-- Results -->
@@ -153,18 +153,18 @@
                         <span class="image-label">Watermarked (Preview)</span>
                     </div>
                 </div>
-                <p style="font-size: var(--text-sm); color: var(--gray-600); margin-bottom: var(--space-4); text-align: center;">
+                <p style="font-size: var(--text-sm); color: var(--text-secondary); margin-bottom: var(--space-4); text-align: center;">
                     Preview has "PREVIEW" overlay • Download to get clean watermarked version
                 </p>
 
-                <div class="result-card" style="background: var(--gray-50); padding: var(--space-4); border-radius: var(--radius-lg); margin-bottom: var(--space-4);">
+                <div class="result-card" style="background: var(--bg-secondary); padding: var(--space-4); border-radius: var(--radius-lg); margin-bottom: var(--space-4);">
                     <div style="display: grid; gap: var(--space-2);">
                         <div style="display: flex; justify-content: space-between;">
-                            <span style="color: var(--gray-600);">Watermark text:</span>
+                            <span style="color: var(--text-secondary);">Watermark text:</span>
                             <strong id="appliedText">-</strong>
                         </div>
                         <div style="display: flex; justify-content: space-between;">
-                            <span style="color: var(--gray-600);">Position:</span>
+                            <span style="color: var(--text-secondary);">Position:</span>
                             <strong id="appliedPosition">-</strong>
                         </div>
                     </div>

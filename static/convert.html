@@ -106,7 +106,7 @@
                         <div id="qualitySection" style="margin-top: var(--space-4); display: none;">
                             <label class="form-label">Quality: <span id="qualityValue">100</span>%</label>
                             <input type="range" id="qualitySlider" min="1" max="100" value="100" style="width: 100%;">
-                            <p style="font-size: var(--text-sm); color: var(--gray-600); margin-top: var(--space-2);">
+                            <p style="font-size: var(--text-sm); color: var(--text-secondary); margin-top: var(--space-2);">
                                 100% = Maximum quality (larger file). 85-95% = Good balance. JPG/WebP only.
                             </p>
                         </div>
@@ -121,33 +121,33 @@
             <!-- Processing -->
             <div id="processingSection" style="display: none; text-align: center; padding: var(--space-12) 0;">
                 <div class="spinner"></div>
-                <p style="margin-top: var(--space-4); color: var(--gray-600);">Converting image...</p>
+                <p style="margin-top: var(--space-4); color: var(--text-secondary);">Converting image...</p>
             </div>
 
             <!-- Results -->
             <div id="resultsSection" class="tool-workspace" style="display: none; margin-top: var(--space-8);">
                 <h3 style="font-size: var(--text-xl); font-weight: 700; margin-bottom: var(--space-4);">✅ Conversion Complete!</h3>
                 
-                <div class="result-card" style="background: var(--gray-50); padding: var(--space-4); border-radius: var(--radius-lg); margin-bottom: var(--space-4);">
+                <div class="result-card" style="background: var(--bg-secondary); padding: var(--space-4); border-radius: var(--radius-lg); margin-bottom: var(--space-4);">
                     <div style="display: grid; gap: var(--space-3);">
                         <div style="display: flex; justify-content: space-between;">
-                            <span style="color: var(--gray-600);">Original format:</span>
+                            <span style="color: var(--text-secondary);">Original format:</span>
                             <strong id="originalFormat">-</strong>
                         </div>
                         <div style="display: flex; justify-content: space-between;">
-                            <span style="color: var(--gray-600);">New format:</span>
+                            <span style="color: var(--text-secondary);">New format:</span>
                             <strong id="newFormat">-</strong>
                         </div>
                         <div style="display: flex; justify-content: space-between;">
-                            <span style="color: var(--gray-600);">Original size:</span>
+                            <span style="color: var(--text-secondary);">Original size:</span>
                             <strong id="originalSize">-</strong>
                         </div>
                         <div style="display: flex; justify-content: space-between;">
-                            <span style="color: var(--gray-600);">New size:</span>
+                            <span style="color: var(--text-secondary);">New size:</span>
                             <strong id="newSize">-</strong>
                         </div>
                         <div style="display: flex; justify-content: space-between;">
-                            <span style="color: var(--gray-600);">Size change:</span>
+                            <span style="color: var(--text-secondary);">Size change:</span>
                             <strong id="sizeChange">-</strong>
                         </div>
                     </div>

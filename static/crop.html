@@ -115,7 +115,7 @@
         
         .ratio-label {
             font-size: var(--text-sm);
-            color: var(--gray-600);
+            color: var(--text-secondary);
             font-weight: 500;
         }
         
@@ -270,16 +270,16 @@
                         <div id="customRatioInput" style="display: none; margin-bottom: var(--space-4);">
                             <label class="form-label">Custom Dimensions (e.g., 1920x1080)</label>
                             <input type="text" id="customRatio" class="form-input" placeholder="1920x1080" pattern="[0-9]+x[0-9]+">
-                            <p style="font-size: var(--text-sm); color: var(--gray-600); margin-top: var(--space-2);">
+                            <p style="font-size: var(--text-sm); color: var(--text-secondary); margin-top: var(--space-2);">
                                 Format: WIDTHxHEIGHT (e.g., 1920x1080, 1200x630)
                             </p>
                         </div>
 
-                        <div style="background: var(--gray-50); padding: var(--space-4); border-radius: var(--radius-lg);">
-                            <p style="font-size: var(--text-sm); color: var(--gray-700); margin: 0;">
+                        <div style="background: var(--bg-secondary); padding: var(--space-4); border-radius: var(--radius-lg);">
+                            <p style="font-size: var(--text-sm); color: var(--text-primary); margin: 0;">
                                 <strong>Crop Mode:</strong> Center crop (keeps center of image)
                             </p>
-                            <p style="font-size: var(--text-sm); color: var(--gray-600); margin-top: var(--space-2); margin-bottom: 0;">
+                            <p style="font-size: var(--text-sm); color: var(--text-secondary); margin-top: var(--space-2); margin-bottom: 0;">
                                 📐 <strong>Common uses:</strong> 1:1 Instagram, 16:9 YouTube, 4:5 Instagram Portrait, 9:16 Stories/Reels
                             </p>
                         </div>
@@ -289,7 +289,7 @@
                         <button type="submit" class="btn btn-primary btn-large w-full" id="cropBtn" disabled>
                             Preview Crop (Free)
                         </button>
-                        <p id="cropStatus" style="font-size: var(--text-sm); color: var(--gray-600); text-align: center; margin-top: var(--space-2);">
+                        <p id="cropStatus" style="font-size: var(--text-sm); color: var(--text-secondary); text-align: center; margin-top: var(--space-2);">
                             Loading...
                         </p>
                     </div>
@@ -299,7 +299,7 @@
             <!-- Processing -->
             <div id="processingSection" style="display: none; text-align: center; padding: var(--space-12) 0;">
                 <div class="spinner"></div>
-                <p style="margin-top: var(--space-4); color: var(--gray-600);">Cropping image...</p>
+                <p style="margin-top: var(--space-4); color: var(--text-secondary);">Cropping image...</p>
             </div>
 
             <!-- Results -->
@@ -317,22 +317,22 @@
                         <span class="image-label">Cropped (Preview)</span>
                     </div>
                 </div>
-                <p style="font-size: var(--text-sm); color: var(--gray-600); margin-bottom: var(--space-4); text-align: center;">
+                <p style="font-size: var(--text-sm); color: var(--text-secondary); margin-bottom: var(--space-4); text-align: center;">
                     Preview has "PREVIEW" watermark • Download to get clean version
                 </p>
 
-                <div class="result-card" style="background: var(--gray-50); padding: var(--space-4); border-radius: var(--radius-lg); margin-bottom: var(--space-4);">
+                <div class="result-card" style="background: var(--bg-secondary); padding: var(--space-4); border-radius: var(--radius-lg); margin-bottom: var(--space-4);">
                     <div style="display: grid; gap: var(--space-2);">
                         <div style="display: flex; justify-content: space-between;">
-                            <span style="color: var(--gray-600);">Original size:</span>
+                            <span style="color: var(--text-secondary);">Original size:</span>
                             <strong id="originalSize">-</strong>
                         </div>
                         <div style="display: flex; justify-content: space-between;">
-                            <span style="color: var(--gray-600);">Cropped size:</span>
+                            <span style="color: var(--text-secondary);">Cropped size:</span>
                             <strong id="croppedSize">-</strong>
                         </div>
                         <div style="display: flex; justify-content: space-between;">
-                            <span style="color: var(--gray-600);">Aspect ratio:</span>
+                            <span style="color: var(--text-secondary);">Aspect ratio:</span>
                             <strong id="appliedRatio">-</strong>
                         </div>
                     </div>
