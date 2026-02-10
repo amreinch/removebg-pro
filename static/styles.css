@@ -847,6 +847,8 @@ body {
     position: relative;
     box-shadow: var(--shadow-md);
     transition: all var(--transition-base);
+    display: flex;
+    flex-direction: column;
 }
 
 .pricing-card:hover {
@@ -912,6 +914,7 @@ body {
 .pricing-features {
     list-style: none;
     margin-bottom: var(--space-6);
+    flex: 1;
 }
 
 .pricing-features li {
