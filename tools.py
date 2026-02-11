@@ -415,14 +415,33 @@ def blur_image(
             minSize=(30, 30)
         )
         
-        # Blur each detected face
+        # Blur each detected face with oval mask
         for (x, y, w, h) in faces:
-            # Extract face region
-            face_region = img[y:y+h, x:x+w]
-            # Apply Gaussian blur
+            # Create a copy of the face region
+            face_region = img[y:y+h, x:x+w].copy()
+            
+            # Apply Gaussian blur to the entire region
             blurred_face = cv2.GaussianBlur(face_region, kernel_size, 0)
-            # Replace with blurred version
-            img[y:y+h, x:x+w] = blurred_face
+            
+            # Create an elliptical mask (oval shape for natural face blur)
+            mask = np.zeros((h, w), dtype=np.uint8)
+            center = (w // 2, h // 2)
+            axes = (w // 2, h // 2)  # Ellipse axes
+            cv2.ellipse(mask, center, axes, 0, 0, 360, 255, -1)
+            
+            # Smooth the mask edges for better blending
+            mask = cv2.GaussianBlur(mask, (21, 21), 11)
+            
+            # Normalize mask to 0-1 range
+            mask_3ch = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR) / 255.0
+            
+            # Blend blurred and original using the mask
+            face_region_float = face_region.astype(float)
+            blurred_face_float = blurred_face.astype(float)
+            blended = (mask_3ch * blurred_face_float + (1 - mask_3ch) * face_region_float).astype(np.uint8)
+            
+            # Replace with blended version
+            img[y:y+h, x:x+w] = blended
     
     elif mode == "manual" and blur_regions:
         # Blur custom regions
