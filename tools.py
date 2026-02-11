@@ -400,13 +400,13 @@ def blur_image(
     
     if mode == "auto":
         # Use MediaPipe Face Mesh for precise face detection and masking
-        from mediapipe import solutions
+        import mediapipe as mp
         
         # Convert BGR to RGB for MediaPipe
         img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         
         # Initialize Face Mesh
-        with solutions.face_mesh.FaceMesh(
+        with mp.solutions.face_mesh.FaceMesh(
             static_image_mode=True,
             max_num_faces=10,
             refine_landmarks=True,
@@ -493,7 +493,7 @@ def detect_faces(image_bytes: bytes) -> List[Tuple[int, int, int, int]]:
     """
     import cv2
     import numpy as np
-    from mediapipe import solutions
+    import mediapipe as mp
     
     # Load image
     nparr = np.frombuffer(image_bytes, np.uint8)
@@ -508,7 +508,7 @@ def detect_faces(image_bytes: bytes) -> List[Tuple[int, int, int, int]]:
     
     face_boxes = []
     
-    with solutions.face_mesh.FaceMesh(
+    with mp.solutions.face_mesh.FaceMesh(
         static_image_mode=True,
         max_num_faces=10,
         min_detection_confidence=0.5
