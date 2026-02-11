@@ -399,49 +399,68 @@ def blur_image(
     kernel_size = blur_map.get(blur_strength, (51, 51))
     
     if mode == "auto":
-        # Auto-detect faces using Haar Cascade
-        face_cascade = cv2.CascadeClassifier(
-            cv2.data.haarcascades + 'haarcascade_frontalface_default.xml'
-        )
+        # Use MediaPipe Face Mesh for precise face detection and masking
+        import mediapipe as mp
         
-        # Convert to grayscale for detection
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        mp_face_mesh = mp.solutions.face_mesh
         
-        # Detect faces
-        faces = face_cascade.detectMultiScale(
-            gray,
-            scaleFactor=1.1,
-            minNeighbors=5,
-            minSize=(30, 30)
-        )
+        # Convert BGR to RGB for MediaPipe
+        img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         
-        # Blur each detected face with oval mask
-        for (x, y, w, h) in faces:
-            # Create a copy of the face region
-            face_region = img[y:y+h, x:x+w].copy()
+        # Initialize Face Mesh
+        with mp_face_mesh.FaceMesh(
+            static_image_mode=True,
+            max_num_faces=10,
+            refine_landmarks=True,
+            min_detection_confidence=0.5
+        ) as face_mesh:
             
-            # Apply Gaussian blur to the entire region
-            blurred_face = cv2.GaussianBlur(face_region, kernel_size, 0)
+            results = face_mesh.process(img_rgb)
             
-            # Create an elliptical mask (oval shape for natural face blur)
-            mask = np.zeros((h, w), dtype=np.uint8)
-            center = (w // 2, h // 2)
-            axes = (w // 2, h // 2)  # Ellipse axes
-            cv2.ellipse(mask, center, axes, 0, 0, 360, 255, -1)
-            
-            # Smooth the mask edges for better blending
-            mask = cv2.GaussianBlur(mask, (21, 21), 11)
-            
-            # Normalize mask to 0-1 range
-            mask_3ch = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR) / 255.0
-            
-            # Blend blurred and original using the mask
-            face_region_float = face_region.astype(float)
-            blurred_face_float = blurred_face.astype(float)
-            blended = (mask_3ch * blurred_face_float + (1 - mask_3ch) * face_region_float).astype(np.uint8)
-            
-            # Replace with blended version
-            img[y:y+h, x:x+w] = blended
+            if results.multi_face_landmarks:
+                h, w = img.shape[:2]
+                
+                # Process each detected face
+                for face_landmarks in results.multi_face_landmarks:
+                    # Create mask for this face
+                    mask = np.zeros((h, w), dtype=np.uint8)
+                    
+                    # MediaPipe FACEMESH_FACE_OVAL indices define the face contour
+                    # This includes forehead, cheeks, jawline, and chin
+                    FACE_OVAL = [
+                        10, 338, 297, 332, 284, 251, 389, 356, 454, 323, 361, 288,
+                        397, 365, 379, 378, 400, 377, 152, 148, 176, 149, 150, 136,
+                        172, 58, 132, 93, 234, 127, 162, 21, 54, 103, 67, 109
+                    ]
+                    
+                    # Convert normalized landmarks to pixel coordinates
+                    points = []
+                    for idx in FACE_OVAL:
+                        landmark = face_landmarks.landmark[idx]
+                        x_px = int(landmark.x * w)
+                        y_px = int(landmark.y * h)
+                        points.append([x_px, y_px])
+                    
+                    # Create convex hull from face oval points for smooth mask
+                    points = np.array(points, dtype=np.int32)
+                    hull = cv2.convexHull(points)
+                    
+                    # Fill the convex hull to create face mask
+                    cv2.fillConvexPoly(mask, hull, 255)
+                    
+                    # Smooth mask edges for natural blending
+                    mask = cv2.GaussianBlur(mask, (31, 31), 15)
+                    
+                    # Apply Gaussian blur to entire image
+                    blurred_img = cv2.GaussianBlur(img, kernel_size, 0)
+                    
+                    # Normalize mask to 0-1 range
+                    mask_3ch = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR) / 255.0
+                    
+                    # Blend blurred and original using the mask
+                    img_float = img.astype(float)
+                    blurred_float = blurred_img.astype(float)
+                    img = (mask_3ch * blurred_float + (1 - mask_3ch) * img_float).astype(np.uint8)
     
     elif mode == "manual" and blur_regions:
         # Blur custom regions
@@ -466,7 +485,7 @@ def blur_image(
 
 def detect_faces(image_bytes: bytes) -> List[Tuple[int, int, int, int]]:
     """
-    Detect faces in an image and return their coordinates.
+    Detect faces in an image using MediaPipe and return their bounding boxes.
     
     Args:
         image_bytes: Image file bytes
@@ -476,6 +495,7 @@ def detect_faces(image_bytes: bytes) -> List[Tuple[int, int, int, int]]:
     """
     import cv2
     import numpy as np
+    import mediapipe as mp
     
     # Load image
     nparr = np.frombuffer(image_bytes, np.uint8)
@@ -484,21 +504,34 @@ def detect_faces(image_bytes: bytes) -> List[Tuple[int, int, int, int]]:
     if img is None:
         raise ValueError("Invalid image data")
     
-    # Load face cascade
-    face_cascade = cv2.CascadeClassifier(
-        cv2.data.haarcascades + 'haarcascade_frontalface_default.xml'
-    )
+    # Convert BGR to RGB for MediaPipe
+    img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    h, w = img.shape[:2]
     
-    # Convert to grayscale
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    mp_face_mesh = mp.solutions.face_mesh
     
-    # Detect faces
-    faces = face_cascade.detectMultiScale(
-        gray,
-        scaleFactor=1.1,
-        minNeighbors=5,
-        minSize=(30, 30)
-    )
+    face_boxes = []
     
-    # Convert to list of tuples
-    return [(int(x), int(y), int(w), int(h)) for (x, y, w, h) in faces]
+    with mp_face_mesh.FaceMesh(
+        static_image_mode=True,
+        max_num_faces=10,
+        min_detection_confidence=0.5
+    ) as face_mesh:
+        
+        results = face_mesh.process(img_rgb)
+        
+        if results.multi_face_landmarks:
+            for face_landmarks in results.multi_face_landmarks:
+                # Calculate bounding box from all landmarks
+                x_coords = [int(lm.x * w) for lm in face_landmarks.landmark]
+                y_coords = [int(lm.y * h) for lm in face_landmarks.landmark]
+                
+                x_min, x_max = min(x_coords), max(x_coords)
+                y_min, y_max = min(y_coords), max(y_coords)
+                
+                width = x_max - x_min
+                height = y_max - y_min
+                
+                face_boxes.append((x_min, y_min, width, height))
+    
+    return face_boxes
