@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- SEO Meta Tags -->
+    <title>Convert PDF to Images Online Free - PDF to JPG/PNG Converter | Toolry</title>
+    <meta name="description" content="Free PDF to image converter. Extract pages from PDF as JPG or PNG. Convert all pages or select specific pages. Simple, fast, secure download.">
+    <meta name="keywords" content="pdf to jpg, pdf to png, pdf to image, extract pdf pages, pdf converter, convert pdf to pictures">
+    <meta name="author" content="Toolry">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://toolry.app/pdf-to-images">
+    <meta property="og:title" content="Convert PDF to Images - Free Online Tool">
+    <meta property="og:description" content="Extract PDF pages as JPG or PNG images. Free converter with high quality output.">
+    <meta property="og:image" content="https://toolry.app/og-pdf-images.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://toolry.app/pdf-to-images">
+    <meta name="twitter:title" content="PDF to Images Converter - Free Tool">
+    <meta name="twitter:description" content="Convert PDF to JPG/PNG online. Extract all pages.">
+    <meta name="twitter:image" content="https://toolry.app/og-pdf-images.png">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://toolry.app/pdf-to-images">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/styles.css">
+    
+    <!-- Schema.org Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Toolry PDF to Images Converter",
+      "applicationCategory": "UtilityApplication",
+      "description": "Convert PDF pages to JPG or PNG images",
+      "operatingSystem": "Web",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      }
+    }
+    </script>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-content">
+                <a href="/static/index.html" class="logo">
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                        <rect width="32" height="32" rx="8" fill="url(#gradient)"/>
+                        <path d="M16 8L24 16L16 24L8 16L16 8Z" fill="white"/>
+                        <defs>
+                            <linearGradient id="gradient" x1="0" y1="0" x2="32" y2="32">
+                                <stop offset="0%" stop-color="#3B82F6"/>
+                                <stop offset="100%" stop-color="#8B5CF6"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                    <span>Toolry</span>
+                </a>
+                
+                <div class="nav-links">
+                    <a href="/static/index.html#tools" class="nav-link">Tools</a>
+                    <a href="/static/index.html#pricing" class="nav-link">Pricing</a>
+                </div>
+                
+                <div class="nav-actions">
+                    <div id="authButtons">
+                        <button class="btn btn-text" onclick="showLogin()">Sign In</button>
+                        <button class="btn btn-primary" onclick="showSignup()">Get Started</button>
+                    </div>
+                    <div id="userButtons" style="display: none;">
+                        <div class="user-menu">
+                            <span class="user-email" id="userEmail"></span>
+                            <span class="user-credits" id="userCredits">-- credits</span>
+                            <button class="btn btn-text" onclick="logout()">Sign Out</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Tool Workspace -->
+    <div class="tool-workspace">
+        <div class="container container-narrow">
+            <h2 class="workspace-title" style="margin-bottom: var(--space-8);">PDF to Images</h2>
+            
+            <div class="message" id="messageBox" style="display: none;"></div>
+            
+            <!-- Upload Area -->
+            <div class="upload-section" id="uploadSection">
+                <div class="upload-area" id="uploadArea">
+                    <svg width="64" height="64" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                    </svg>
+                    <h3>Drop PDF here</h3>
+                    <p>or click to browse (PDF only)</p>
+                    <input type="file" id="fileInput" accept=".pdf,application/pdf" hidden>
+                </div>
+                
+                <div class="format-options">
+                    <label>Output Format:</label>
+                    <div class="format-buttons">
+                        <button type="button" class="format-btn active" data-format="png">PNG</button>
+                        <button type="button" class="format-btn" data-format="jpg">JPG</button>
+                    </div>
+                </div>
+                
+                <div class="format-options">
+                    <label>Quality (DPI):</label>
+                    <div class="format-buttons">
+                        <button type="button" class="format-btn" data-dpi="150">Standard (150)</button>
+                        <button type="button" class="format-btn active" data-dpi="200">High (200)</button>
+                        <button type="button" class="format-btn" data-dpi="300">Maximum (300)</button>
+                    </div>
+                </div>
+                
+                <button class="btn btn-primary btn-large w-full" id="processBtn" disabled>
+                    Convert to Images (1 credit)
+                </button>
+            </div>
+            
+            <!-- Processing State -->
+            <div class="processing-section" id="processingSection" style="display: none;">
+                <div class="loader"></div>
+                <h3>Converting PDF...</h3>
+                <p>This may take a few seconds</p>
+            </div>
+            
+            <!-- Results Section -->
+            <div class="results-section" id="resultsSection" style="display: none;">
+                <div class="result-notice">
+                    <strong>✅ Conversion Complete</strong>
+                    <p id="resultInfo"></p>
+                </div>
+                
+                <div class="result-actions">
+                    <button class="btn btn-primary btn-large" id="downloadBtn">
+                        💾 Download Images
+                    </button>
+                    <button class="btn btn-secondary btn-large" onclick="resetForm()">
+                        Convert Another PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        let selectedFile = null;
+        let selectedFormat = 'png';
+        let selectedDPI = 200;
+        let currentUser = null;
+        let downloadUrl = null;
+
+        // Initialize
+        async function init() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/static/index.html';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/auth/me`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) throw new Error('Auth failed');
+
+                currentUser = await response.json();
+
+                // Show user info
+                document.getElementById('authButtons').style.display = 'none';
+                document.getElementById('userButtons').style.display = 'flex';
+                document.getElementById('userEmail').textContent = currentUser.email;
+                document.getElementById('userCredits').textContent = `${currentUser.credits_balance} credits`;
+
+            } catch (error) {
+                console.error('Init error:', error);
+                localStorage.removeItem('token');
+                window.location.href = '/static/index.html';
+            }
+        }
+
+        // File upload handling
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+
+        uploadArea.addEventListener('click', () => fileInput.click());
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = 'var(--brand-primary)';
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.style.borderColor = 'var(--border-color)';
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = 'var(--border-color)';
+            if (e.dataTransfer.files.length > 0) {
+                handleFile(e.dataTransfer.files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            if (!file.type.includes('pdf')) {
+                showMessage('Please select a PDF file', 'error');
+                return;
+            }
+            
+            selectedFile = file;
+            document.getElementById('processBtn').disabled = false;
+            showMessage(`Selected: ${file.name}`, 'info');
+        }
+
+        // Format selection
+        document.querySelectorAll('.format-btn[data-format]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.format-btn[data-format]').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                selectedFormat = btn.dataset.format;
+            });
+        });
+
+        // DPI selection
+        document.querySelectorAll('.format-btn[data-dpi]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.format-btn[data-dpi]').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                selectedDPI = parseInt(btn.dataset.dpi);
+            });
+        });
+
+        // Process file
+        document.getElementById('processBtn').addEventListener('click', async () => {
+            if (!selectedFile) return;
+            
+            showSection('processing');
+            
+            try {
+                const formData = new FormData();
+                formData.append('file', selectedFile);
+                formData.append('output_format', selectedFormat);
+                formData.append('dpi', selectedDPI);
+                
+                const response = await fetch(`${API_BASE}/api/convert/pdf-to-images`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.detail || 'Conversion failed');
+                }
+
+                // Update credits
+                currentUser.credits_balance = data.credits_remaining;
+                document.getElementById('userCredits').textContent = `${currentUser.credits_balance} credits`;
+
+                downloadUrl = data.download_url;
+                
+                const resultInfo = document.getElementById('resultInfo');
+                if (data.pages_count === 1) {
+                    resultInfo.textContent = '1 page extracted as image.';
+                } else {
+                    resultInfo.textContent = `${data.pages_count} pages extracted and packaged as ZIP.`;
+                }
+                
+                showSection('results');
+
+            } catch (error) {
+                console.error('Process error:', error);
+                showMessage(error.message, 'error');
+                showSection('upload');
+            }
+        });
+
+        // Download
+        document.getElementById('downloadBtn').addEventListener('click', () => {
+            if (downloadUrl) {
+                window.location.href = API_BASE + downloadUrl;
+            }
+        });
+
+        function resetForm() {
+            selectedFile = null;
+            fileInput.value = '';
+            document.getElementById('processBtn').disabled = true;
+            downloadUrl = null;
+            showSection('upload');
+        }
+
+        function showSection(section) {
+            document.getElementById('uploadSection').style.display = section === 'upload' ? 'block' : 'none';
+            document.getElementById('processingSection').style.display = section === 'processing' ? 'block' : 'none';
+            document.getElementById('resultsSection').style.display = section === 'results' ? 'block' : 'none';
+        }
+
+        function showMessage(msg, type) {
+            const box = document.getElementById('messageBox');
+            box.textContent = msg;
+            box.className = 'message ' + type;
+            box.style.display = 'block';
+            setTimeout(() => box.style.display = 'none', 5000);
+        }
+
+        // Auth functions
+        function showLogin() {
+            document.getElementById('loginModal').classList.add('active');
+        }
+
+        function showSignup() {
+            document.getElementById('signupModal').classList.add('active');
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = '/static/index.html';
+        }
+
+        // Initialize on page load
+        init();
+    </script>
+
+    <!-- Modals -->
+    <div class="modal" id="loginModal">
+        <div class="modal-overlay" onclick="closeModal('loginModal')"></div>
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal('loginModal')">&times;</button>
+            <h2>Welcome Back</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" name="password" required>
+                </div>
+                <div id="loginError" class="error-message" style="display: none;"></div>
+                <button type="submit" class="btn btn-primary w-full">Sign In</button>
+            </form>
+            <p class="modal-footer">
+                Don't have an account? <a onclick="closeModal('loginModal'); showSignup();">Sign up</a>
+            </p>
+        </div>
+    </div>
+
+    <div class="modal" id="signupModal">
+        <div class="modal-overlay" onclick="closeModal('signupModal')"></div>
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal('signupModal')">&times;</button>
+            <h2>Get Started Free</h2>
+            <form id="signupForm">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" name="password" minlength="8" required>
+                </div>
+                <div class="form-group">
+                    <label>Full Name (optional)</label>
+                    <input type="text" name="full_name">
+                </div>
+                <div class="form-group" style="margin-top: var(--space-4);">
+                    <label style="display: flex; align-items: flex-start; gap: var(--space-2); cursor: pointer; font-size: var(--text-sm);">
+                        <input type="checkbox" name="terms_accepted" required style="margin-top: 2px; width: 18px; height: 18px; cursor: pointer;">
+                        <span style="color: var(--text-secondary);">I agree to the <a href="/static/terms.html" target="_blank" style="color: var(--brand-primary); text-decoration: underline;">Terms of Service</a> and <a href="/static/privacy.html" target="_blank" style="color: var(--brand-primary); text-decoration: underline;">Privacy Policy</a></span>
+                    </label>
+                </div>
+                <div id="signupError" class="error-message" style="display: none;"></div>
+                <button type="submit" class="btn btn-primary w-full">Create Account</button>
+            </form>
+            <p class="modal-footer">
+                Already have an account? <a onclick="closeModal('signupModal'); showLogin();">Sign in</a>
+            </p>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

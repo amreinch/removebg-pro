@@ -704,7 +704,7 @@ async def api_remove_background(
 # QR CODE GENERATOR
 # ============================================================================
 
-from tools import generate_qr_code, resize_image, bulk_resize_images, merge_pdfs, split_pdf, compress_pdf
+from tools import generate_qr_code, resize_image, bulk_resize_images, merge_pdfs, split_pdf, compress_pdf, images_to_pdf, pdf_to_images
 
 @app.post("/api/qr-code/generate")
 async def generate_qr(
@@ -1942,6 +1942,227 @@ async def convert_pdf_to_excel(
 
 
 # ============================================================================
+
+# ============================================================================
+# IMAGE TO PDF CONVERTER
+# ============================================================================
+
+@app.post("/api/convert/images-to-pdf")
+async def convert_images_to_pdf(
+    files: List[UploadFile] = File(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Convert one or more images to a single PDF.
+    Cost: 1 credit
+    """
+    if not files or len(files) == 0:
+        raise HTTPException(status_code=400, detail="No files provided")
+    
+    if len(files) > 50:
+        raise HTTPException(status_code=400, detail="Maximum 50 images allowed")
+    
+    # Check credit
+    if current_user.credits_balance < 1:
+        raise HTTPException(status_code=402, detail="Insufficient credits")
+    
+    try:
+        start_time = datetime.utcnow()
+        
+        # Read all images
+        image_bytes_list = []
+        total_size = 0
+        
+        for file in files:
+            contents = await file.read()
+            total_size += len(contents)
+            
+            # Validate it's an image
+            try:
+                img = Image.open(io.BytesIO(contents))
+                img.verify()
+            except Exception:
+                raise HTTPException(status_code=400, detail=f"Invalid image file: {file.filename}")
+            
+            image_bytes_list.append(contents)
+        
+        # Convert to PDF
+        pdf_bytes = images_to_pdf(image_bytes_list)
+        
+        # Save output
+        file_id = str(uuid.uuid4())
+        output_filename = f"images_to_pdf_{file_id}.pdf"
+        output_path = os.path.join(OUTPUTS_DIR, output_filename)
+        
+        with open(output_path, "wb") as f:
+            f.write(pdf_bytes)
+        
+        # Deduct 1 credit
+        current_user.use_credit()
+        
+        # Record usage
+        processing_time = int((datetime.utcnow() - start_time).total_seconds() * 1000)
+        
+        usage_record = UsageRecord(
+            user_id=current_user.id,
+            original_filename=f"{len(files)}_images",
+            file_id=file_id,
+            output_format="pdf",
+            original_size=total_size,
+            output_size=len(pdf_bytes),
+            processing_time=processing_time
+        )
+        db.add(usage_record)
+        db.commit()
+        
+        return {
+            "success": True,
+            "file_id": file_id,
+            "download_url": f"/outputs/{output_filename}",
+            "images_count": len(files),
+            "original_size": total_size,
+            "output_size": len(pdf_bytes),
+            "credits_remaining": current_user.credits_balance,
+            "timestamp": datetime.utcnow()
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Image to PDF conversion error: {str(e)}")
+
+
+# ============================================================================
+# PDF TO IMAGES CONVERTER
+# ============================================================================
+
+@app.post("/api/convert/pdf-to-images")
+async def convert_pdf_to_images(
+    file: UploadFile = File(...),
+    output_format: str = Form("png"),
+    dpi: int = Form(200),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Convert PDF pages to images.
+    Cost: 1 credit
+    Formats: png, jpg
+    """
+    if not file.filename.lower().endswith('.pdf'):
+        raise HTTPException(status_code=400, detail="Only PDF files allowed")
+    
+    if output_format.lower() not in ['png', 'jpg', 'jpeg']:
+        raise HTTPException(status_code=400, detail="Output format must be 'png' or 'jpg'")
+    
+    if dpi < 72 or dpi > 600:
+        raise HTTPException(status_code=400, detail="DPI must be between 72 and 600")
+    
+    # Check credit
+    if current_user.credits_balance < 1:
+        raise HTTPException(status_code=402, detail="Insufficient credits")
+    
+    try:
+        start_time = datetime.utcnow()
+        
+        # Read PDF
+        contents = await file.read()
+        
+        # Convert PDF to images
+        fmt = 'jpg' if output_format.lower() in ['jpg', 'jpeg'] else 'png'
+        image_bytes_list = pdf_to_images(contents, output_format=fmt, dpi=dpi)
+        
+        # If single page, return single file
+        if len(image_bytes_list) == 1:
+            file_id = str(uuid.uuid4())
+            output_filename = f"pdf_page_1_{file_id}.{fmt}"
+            output_path = os.path.join(OUTPUTS_DIR, output_filename)
+            
+            with open(output_path, "wb") as f:
+                f.write(image_bytes_list[0])
+            
+            # Deduct 1 credit
+            current_user.use_credit()
+            
+            # Record usage
+            processing_time = int((datetime.utcnow() - start_time).total_seconds() * 1000)
+            
+            usage_record = UsageRecord(
+                user_id=current_user.id,
+                original_filename=file.filename,
+                file_id=file_id,
+                output_format=fmt,
+                original_size=len(contents),
+                output_size=len(image_bytes_list[0]),
+                processing_time=processing_time
+            )
+            db.add(usage_record)
+            db.commit()
+            
+            return {
+                "success": True,
+                "file_id": file_id,
+                "download_url": f"/outputs/{output_filename}",
+                "pages_count": 1,
+                "original_size": len(contents),
+                "output_size": len(image_bytes_list[0]),
+                "credits_remaining": current_user.credits_balance,
+                "timestamp": datetime.utcnow()
+            }
+        
+        # Multiple pages - create ZIP
+        import zipfile
+        
+        file_id = str(uuid.uuid4())
+        zip_filename = f"pdf_to_images_{file_id}.zip"
+        zip_path = os.path.join(OUTPUTS_DIR, zip_filename)
+        
+        total_output_size = 0
+        with zipfile.ZipFile(zip_path, 'w') as zipf:
+            for i, img_bytes in enumerate(image_bytes_list, 1):
+                zipf.writestr(f"page_{i}.{fmt}", img_bytes)
+                total_output_size += len(img_bytes)
+        
+        # Deduct 1 credit
+        current_user.use_credit()
+        
+        # Record usage
+        processing_time = int((datetime.utcnow() - start_time).total_seconds() * 1000)
+        
+        usage_record = UsageRecord(
+            user_id=current_user.id,
+            original_filename=file.filename,
+            file_id=file_id,
+            output_format="zip",
+            original_size=len(contents),
+            output_size=os.path.getsize(zip_path),
+            processing_time=processing_time
+        )
+        db.add(usage_record)
+        db.commit()
+        
+        return {
+            "success": True,
+            "file_id": file_id,
+            "download_url": f"/outputs/{zip_filename}",
+            "pages_count": len(image_bytes_list),
+            "original_size": len(contents),
+            "output_size": total_output_size,
+            "zip_size": os.path.getsize(zip_path),
+            "credits_remaining": current_user.credits_balance,
+            "timestamp": datetime.utcnow()
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"PDF to images conversion error: {str(e)}")
+
+
+
 # OCR - TEXT EXTRACTION
 # ============================================================================
 

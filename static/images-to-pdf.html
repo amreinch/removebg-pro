@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- SEO Meta Tags -->
+    <title>Convert Images to PDF Online Free - JPG to PDF Converter | Toolry</title>
+    <meta name="description" content="Free image to PDF converter. Combine multiple JPG, PNG, WebP images into one PDF. Simple, fast, secure. Upload up to 50 images, download as single PDF document.">
+    <meta name="keywords" content="jpg to pdf, image to pdf, png to pdf, convert image to pdf, combine images pdf, merge images pdf, photos to pdf">
+    <meta name="author" content="Toolry">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://toolry.app/images-to-pdf">
+    <meta property="og:title" content="Convert Images to PDF - Free Online Tool">
+    <meta property="og:description" content="Combine multiple images into a single PDF. Works with JPG, PNG, WebP. Free converter.">
+    <meta property="og:image" content="https://toolry.app/og-images-pdf.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://toolry.app/images-to-pdf">
+    <meta name="twitter:title" content="Images to PDF Converter - Free Tool">
+    <meta name="twitter:description" content="Convert JPG, PNG to PDF online. Combine multiple images.">
+    <meta name="twitter:image" content="https://toolry.app/og-images-pdf.png">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://toolry.app/images-to-pdf">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/styles.css">
+    
+    <!-- Schema.org Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Toolry Images to PDF Converter",
+      "applicationCategory": "UtilityApplication",
+      "description": "Convert multiple images to a single PDF document",
+      "operatingSystem": "Web",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      }
+    }
+    </script>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-content">
+                <a href="/static/index.html" class="logo">
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                        <rect width="32" height="32" rx="8" fill="url(#gradient)"/>
+                        <path d="M16 8L24 16L16 24L8 16L16 8Z" fill="white"/>
+                        <defs>
+                            <linearGradient id="gradient" x1="0" y1="0" x2="32" y2="32">
+                                <stop offset="0%" stop-color="#3B82F6"/>
+                                <stop offset="100%" stop-color="#8B5CF6"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                    <span>Toolry</span>
+                </a>
+                
+                <div class="nav-links">
+                    <a href="/static/index.html#tools" class="nav-link">Tools</a>
+                    <a href="/static/index.html#pricing" class="nav-link">Pricing</a>
+                </div>
+                
+                <div class="nav-actions">
+                    <div id="authButtons">
+                        <button class="btn btn-text" onclick="showLogin()">Sign In</button>
+                        <button class="btn btn-primary" onclick="showSignup()">Get Started</button>
+                    </div>
+                    <div id="userButtons" style="display: none;">
+                        <div class="user-menu">
+                            <span class="user-email" id="userEmail"></span>
+                            <span class="user-credits" id="userCredits">-- credits</span>
+                            <button class="btn btn-text" onclick="logout()">Sign Out</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Tool Workspace -->
+    <div class="tool-workspace">
+        <div class="container container-narrow">
+            <h2 class="workspace-title" style="margin-bottom: var(--space-8);">Images to PDF</h2>
+            
+            <div class="message" id="messageBox" style="display: none;"></div>
+            
+            <!-- Upload Area -->
+            <div class="upload-section" id="uploadSection">
+                <div class="upload-area" id="uploadArea">
+                    <svg width="64" height="64" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+                    </svg>
+                    <h3>Drop images here</h3>
+                    <p>or click to browse (JPG, PNG, WebP - max 50 images)</p>
+                    <input type="file" id="fileInput" accept="image/jpeg,image/jpg,image/png,image/webp" multiple hidden>
+                </div>
+                
+                <div id="filesPreview" style="display: none; margin-top: var(--space-6);">
+                    <h4 style="margin-bottom: var(--space-3); color: var(--text-primary);">Selected Images (<span id="fileCount">0</span>)</h4>
+                    <div id="filesList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: var(--space-3);"></div>
+                </div>
+                
+                <button class="btn btn-primary btn-large w-full" id="processBtn" disabled style="margin-top: var(--space-6);">
+                    Convert to PDF (1 credit)
+                </button>
+            </div>
+            
+            <!-- Processing State -->
+            <div class="processing-section" id="processingSection" style="display: none;">
+                <div class="loader"></div>
+                <h3>Creating PDF...</h3>
+                <p>Combining <span id="processingCount">0</span> images</p>
+            </div>
+            
+            <!-- Results Section -->
+            <div class="results-section" id="resultsSection" style="display: none;">
+                <div class="result-notice">
+                    <strong>✅ PDF Created Successfully</strong>
+                    <p>Your images have been combined into a single PDF document.</p>
+                </div>
+                
+                <div class="result-actions">
+                    <button class="btn btn-primary btn-large" id="downloadBtn">
+                        💾 Download PDF
+                    </button>
+                    <button class="btn btn-secondary btn-large" onclick="resetForm()">
+                        Convert More Images
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        let selectedFiles = [];
+        let currentUser = null;
+        let downloadUrl = null;
+
+        // Initialize
+        async function init() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/static/index.html';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/auth/me`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) throw new Error('Auth failed');
+
+                currentUser = await response.json();
+
+                // Show user info
+                document.getElementById('authButtons').style.display = 'none';
+                document.getElementById('userButtons').style.display = 'flex';
+                document.getElementById('userEmail').textContent = currentUser.email;
+                document.getElementById('userCredits').textContent = `${currentUser.credits_balance} credits`;
+
+            } catch (error) {
+                console.error('Init error:', error);
+                localStorage.removeItem('token');
+                window.location.href = '/static/index.html';
+            }
+        }
+
+        // File upload handling
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+
+        uploadArea.addEventListener('click', () => fileInput.click());
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = 'var(--brand-primary)';
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.style.borderColor = 'var(--border-color)';
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = 'var(--border-color)';
+            const files = Array.from(e.dataTransfer.files);
+            handleFiles(files);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const files = Array.from(e.target.files);
+            handleFiles(files);
+        });
+
+        function handleFiles(files) {
+            // Filter only images
+            const imageFiles = files.filter(f => f.type.startsWith('image/'));
+            
+            if (imageFiles.length === 0) {
+                showMessage('Please select image files (JPG, PNG, WebP)', 'error');
+                return;
+            }
+            
+            if (imageFiles.length > 50) {
+                showMessage('Maximum 50 images allowed', 'error');
+                return;
+            }
+            
+            selectedFiles = imageFiles;
+            displayFiles();
+            document.getElementById('processBtn').disabled = false;
+        }
+
+        function displayFiles() {
+            const preview = document.getElementById('filesPreview');
+            const filesList = document.getElementById('filesList');
+            const fileCount = document.getElementById('fileCount');
+            
+            filesList.innerHTML = '';
+            fileCount.textContent = selectedFiles.length;
+            
+            selectedFiles.forEach((file, index) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const div = document.createElement('div');
+                    div.style.cssText = 'position: relative; border: 1px solid var(--border-color); border-radius: var(--radius); overflow: hidden;';
+                    div.innerHTML = `
+                        <img src="${e.target.result}" style="width: 100%; height: 100px; object-fit: cover;">
+                        <div style="padding: var(--space-2); font-size: var(--text-xs); color: var(--text-secondary); text-align: center;">${index + 1}</div>
+                    `;
+                    filesList.appendChild(div);
+                };
+                reader.readAsDataURL(file);
+            });
+            
+            preview.style.display = 'block';
+        }
+
+        // Process files
+        document.getElementById('processBtn').addEventListener('click', async () => {
+            if (selectedFiles.length === 0) return;
+            
+            showSection('processing');
+            document.getElementById('processingCount').textContent = selectedFiles.length;
+            
+            try {
+                const formData = new FormData();
+                selectedFiles.forEach(file => formData.append('files', file));
+                
+                const response = await fetch(`${API_BASE}/api/convert/images-to-pdf`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.detail || 'Conversion failed');
+                }
+
+                // Update credits
+                currentUser.credits_balance = data.credits_remaining;
+                document.getElementById('userCredits').textContent = `${currentUser.credits_balance} credits`;
+
+                downloadUrl = data.download_url;
+                showSection('results');
+
+            } catch (error) {
+                console.error('Process error:', error);
+                showMessage(error.message, 'error');
+                showSection('upload');
+            }
+        });
+
+        // Download
+        document.getElementById('downloadBtn').addEventListener('click', () => {
+            if (downloadUrl) {
+                window.location.href = API_BASE + downloadUrl;
+            }
+        });
+
+        function resetForm() {
+            selectedFiles = [];
+            fileInput.value = '';
+            document.getElementById('filesPreview').style.display = 'none';
+            document.getElementById('processBtn').disabled = true;
+            downloadUrl = null;
+            showSection('upload');
+        }
+
+        function showSection(section) {
+            document.getElementById('uploadSection').style.display = section === 'upload' ? 'block' : 'none';
+            document.getElementById('processingSection').style.display = section === 'processing' ? 'block' : 'none';
+            document.getElementById('resultsSection').style.display = section === 'results' ? 'block' : 'none';
+        }
+
+        function showMessage(msg, type) {
+            const box = document.getElementById('messageBox');
+            box.textContent = msg;
+            box.className = 'message ' + type;
+            box.style.display = 'block';
+            setTimeout(() => box.style.display = 'none', 5000);
+        }
+
+        // Auth functions
+        function showLogin() {
+            document.getElementById('loginModal').classList.add('active');
+        }
+
+        function showSignup() {
+            document.getElementById('signupModal').classList.add('active');
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = '/static/index.html';
+        }
+
+        // Initialize on page load
+        init();
+    </script>
+
+    <!-- Modals -->
+    <div class="modal" id="loginModal">
+        <div class="modal-overlay" onclick="closeModal('loginModal')"></div>
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal('loginModal')">&times;</button>
+            <h2>Welcome Back</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" name="password" required>
+                </div>
+                <div id="loginError" class="error-message" style="display: none;"></div>
+                <button type="submit" class="btn btn-primary w-full">Sign In</button>
+            </form>
+            <p class="modal-footer">
+                Don't have an account? <a onclick="closeModal('loginModal'); showSignup();">Sign up</a>
+            </p>
+        </div>
+    </div>
+
+    <div class="modal" id="signupModal">
+        <div class="modal-overlay" onclick="closeModal('signupModal')"></div>
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal('signupModal')">&times;</button>
+            <h2>Get Started Free</h2>
+            <form id="signupForm">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" name="password" minlength="8" required>
+                </div>
+                <div class="form-group">
+                    <label>Full Name (optional)</label>
+                    <input type="text" name="full_name">
+                </div>
+                <div class="form-group" style="margin-top: var(--space-4);">
+                    <label style="display: flex; align-items: flex-start; gap: var(--space-2); cursor: pointer; font-size: var(--text-sm);">
+                        <input type="checkbox" name="terms_accepted" required style="margin-top: 2px; width: 18px; height: 18px; cursor: pointer;">
+                        <span style="color: var(--text-secondary);">I agree to the <a href="/static/terms.html" target="_blank" style="color: var(--brand-primary); text-decoration: underline;">Terms of Service</a> and <a href="/static/privacy.html" target="_blank" style="color: var(--brand-primary); text-decoration: underline;">Privacy Policy</a></span>
+                    </label>
+                </div>
+                <div id="signupError" class="error-message" style="display: none;"></div>
+                <button type="submit" class="btn btn-primary w-full">Create Account</button>
+            </form>
+            <p class="modal-footer">
+                Already have an account? <a onclick="closeModal('signupModal'); showLogin();">Sign in</a>
+            </p>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

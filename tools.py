@@ -278,3 +278,81 @@ def compress_pdf(pdf_bytes: bytes) -> bytes:
     output.seek(0)
     
     return output.read()
+
+
+# ============================================================================
+# IMAGE TO PDF CONVERTER
+# ============================================================================
+
+def images_to_pdf(image_bytes_list: List[bytes]) -> bytes:
+    """
+    Convert one or more images to a single PDF.
+    
+    Args:
+        image_bytes_list: List of image file bytes (JPG, PNG, WebP, etc.)
+    
+    Returns:
+        PDF bytes containing all images
+    """
+    import img2pdf
+    
+    # img2pdf can handle multiple images at once
+    pdf_bytes = img2pdf.convert(image_bytes_list)
+    return pdf_bytes
+
+
+# ============================================================================
+# PDF TO IMAGES CONVERTER
+# ============================================================================
+
+def pdf_to_images(
+    pdf_bytes: bytes,
+    output_format: str = "png",
+    dpi: int = 200,
+    page_numbers: List[int] = None
+) -> List[bytes]:
+    """
+    Convert PDF pages to images.
+    
+    Args:
+        pdf_bytes: PDF file bytes
+        output_format: 'png' or 'jpg'
+        dpi: Resolution (default 200, higher = better quality but larger files)
+        page_numbers: List of page numbers to convert (1-indexed), None = all pages
+    
+    Returns:
+        List of image bytes (one per page)
+    """
+    from pdf2image import convert_from_bytes
+    
+    # Convert PDF to PIL images
+    images = convert_from_bytes(
+        pdf_bytes,
+        dpi=dpi,
+        fmt=output_format
+    )
+    
+    # Filter pages if specified
+    if page_numbers:
+        images = [images[i-1] for i in page_numbers if 0 < i <= len(images)]
+    
+    # Convert PIL images to bytes
+    result = []
+    for img in images:
+        output = io.BytesIO()
+        
+        # Save as requested format
+        if output_format.lower() == 'jpg':
+            # Convert RGBA to RGB for JPEG
+            if img.mode == 'RGBA':
+                rgb_img = Image.new('RGB', img.size, (255, 255, 255))
+                rgb_img.paste(img, mask=img.split()[3])
+                img = rgb_img
+            img.save(output, format='JPEG', quality=95, optimize=True)
+        else:
+            img.save(output, format='PNG', optimize=True)
+        
+        output.seek(0)
+        result.append(output.read())
+    
+    return result
