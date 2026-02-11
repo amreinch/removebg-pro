@@ -1993,7 +1993,7 @@ async def convert_images_to_pdf(
         # Save output
         file_id = str(uuid.uuid4())
         output_filename = f"images_to_pdf_{file_id}.pdf"
-        output_path = os.path.join(OUTPUTS_DIR, output_filename)
+        output_path = OUTPUT_DIR / output_filename
         
         with open(output_path, "wb") as f:
             f.write(pdf_bytes)
@@ -2078,7 +2078,7 @@ async def convert_pdf_to_images(
         if len(image_bytes_list) == 1:
             file_id = str(uuid.uuid4())
             output_filename = f"pdf_page_1_{file_id}.{fmt}"
-            output_path = os.path.join(OUTPUTS_DIR, output_filename)
+            output_path = OUTPUT_DIR / output_filename
             
             with open(output_path, "wb") as f:
                 f.write(image_bytes_list[0])
@@ -2117,7 +2117,7 @@ async def convert_pdf_to_images(
         
         file_id = str(uuid.uuid4())
         zip_filename = f"pdf_to_images_{file_id}.zip"
-        zip_path = os.path.join(OUTPUTS_DIR, zip_filename)
+        zip_path = OUTPUT_DIR / zip_filename
         
         total_output_size = 0
         with zipfile.ZipFile(zip_path, 'w') as zipf:
