@@ -704,7 +704,8 @@ async def api_remove_background(
 # QR CODE GENERATOR
 # ============================================================================
 
-from tools import generate_qr_code, resize_image, bulk_resize_images, merge_pdfs, split_pdf, compress_pdf, images_to_pdf, pdf_to_images, blur_image, detect_faces
+from tools import generate_qr_code, resize_image, bulk_resize_images, merge_pdfs, split_pdf, compress_pdf, images_to_pdf, pdf_to_images
+from blur_functions import blur_image, detect_faces
 
 @app.post("/api/qr-code/generate")
 async def generate_qr(
