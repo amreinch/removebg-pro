@@ -37,6 +37,7 @@ COPY api_auth.py .
 COPY schemas.py .
 COPY watermark.py .
 COPY tools.py .
+COPY blur_functions.py .
 COPY static/ static/
 
 # Create necessary directories
