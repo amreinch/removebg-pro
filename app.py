@@ -2070,6 +2070,10 @@ async def convert_pdf_to_images(
         # Read PDF
         contents = await file.read()
         
+        # Check file size (max 100MB)
+        if len(contents) > 100 * 1024 * 1024:
+            raise HTTPException(status_code=400, detail="PDF too large. Maximum 100MB allowed")
+        
         # Convert PDF to images
         fmt = 'jpg' if output_format.lower() in ['jpg', 'jpeg'] else 'png'
         image_bytes_list = pdf_to_images(contents, output_format=fmt, dpi=dpi)
