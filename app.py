@@ -704,7 +704,7 @@ async def api_remove_background(
 # QR CODE GENERATOR
 # ============================================================================
 
-from tools import generate_qr_code, resize_image, bulk_resize_images, merge_pdfs, split_pdf, compress_pdf, images_to_pdf, pdf_to_images
+from tools import generate_qr_code, resize_image, bulk_resize_images, merge_pdfs, split_pdf, compress_pdf, images_to_pdf, pdf_to_images, blur_image, detect_faces
 
 @app.post("/api/qr-code/generate")
 async def generate_qr(
@@ -2164,6 +2164,137 @@ async def convert_pdf_to_images(
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"PDF to images conversion error: {str(e)}")
+
+
+
+
+# ============================================================================
+# BLUR SENSITIVE DATA
+# ============================================================================
+
+@app.post("/api/blur/detect-faces")
+async def detect_faces_preview(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Detect faces in image for preview (no credit cost).
+    Returns: face coordinates and preview image with highlighted boxes.
+    """
+    if not file.content_type.startswith('image/'):
+        raise HTTPException(status_code=400, detail="Only image files allowed")
+    
+    try:
+        contents = await file.read()
+        
+        # Detect faces
+        faces = detect_faces(contents)
+        
+        return {
+            "success": True,
+            "faces_detected": len(faces),
+            "face_regions": faces,
+            "message": f"Detected {len(faces)} face(s)" if faces else "No faces detected"
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Face detection error: {str(e)}")
+
+
+@app.post("/api/blur/process")
+async def blur_sensitive_data(
+    file: UploadFile = File(...),
+    mode: str = Form("auto"),
+    blur_strength: str = Form("medium"),
+    blur_regions: str = Form(None),  # JSON string of regions
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Blur sensitive information in image.
+    Cost: 1 credit
+    Modes: auto (face detection), manual (custom regions)
+    """
+    if not file.content_type.startswith('image/'):
+        raise HTTPException(status_code=400, detail="Only image files allowed")
+    
+    if mode not in ['auto', 'manual']:
+        raise HTTPException(status_code=400, detail="Mode must be 'auto' or 'manual'")
+    
+    if blur_strength not in ['low', 'medium', 'high']:
+        raise HTTPException(status_code=400, detail="Blur strength must be 'low', 'medium', or 'high'")
+    
+    # Check credit
+    if current_user.credits_balance < 1:
+        raise HTTPException(status_code=402, detail="Insufficient credits")
+    
+    try:
+        start_time = datetime.utcnow()
+        
+        contents = await file.read()
+        
+        # Parse blur regions for manual mode
+        regions_list = None
+        if mode == "manual" and blur_regions:
+            import json
+            try:
+                regions_list = json.loads(blur_regions)
+                # Convert to list of tuples
+                regions_list = [(r['x'], r['y'], r['w'], r['h']) for r in regions_list]
+            except:
+                raise HTTPException(status_code=400, detail="Invalid blur_regions format")
+        
+        # Blur the image
+        blurred_bytes = blur_image(
+            contents,
+            mode=mode,
+            blur_regions=regions_list,
+            blur_strength=blur_strength
+        )
+        
+        # Save output
+        file_id = str(uuid.uuid4())
+        output_filename = f"blurred_{file_id}.png"
+        output_path = OUTPUT_DIR / output_filename
+        
+        with open(output_path, "wb") as f:
+            f.write(blurred_bytes)
+        
+        # Deduct 1 credit
+        current_user.use_credit()
+        
+        # Record usage
+        processing_time = int((datetime.utcnow() - start_time).total_seconds() * 1000)
+        
+        usage_record = UsageRecord(
+            user_id=current_user.id,
+            original_filename=file.filename,
+            file_id=file_id,
+            output_format="png",
+            original_size=len(contents),
+            output_size=len(blurred_bytes),
+            processing_time=processing_time
+        )
+        db.add(usage_record)
+        db.commit()
+        
+        return {
+            "success": True,
+            "file_id": file_id,
+            "download_url": f"/outputs/{output_filename}",
+            "mode": mode,
+            "blur_strength": blur_strength,
+            "original_size": len(contents),
+            "output_size": len(blurred_bytes),
+            "credits_remaining": current_user.credits_balance,
+            "timestamp": datetime.utcnow()
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Blur processing error: {str(e)}")
 
 
 

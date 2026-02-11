@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <title>Blur Sensitive Information - Face Blur & Privacy Tool | Toolry</title>
+    <meta name="description" content="Free tool to blur faces and sensitive information in photos. Auto-detect faces or manually select areas to blur. Protect privacy, blur credit cards, addresses, personal data.">
+    <meta name="keywords" content="blur face, blur image, hide face, blur photo, censor image, privacy tool, blur sensitive info, blur credit card">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-content">
+                <a href="/static/index.html" class="logo">
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                        <rect width="32" height="32" rx="8" fill="url(#gradient)"/>
+                        <path d="M16 8L24 16L16 24L8 16L16 8Z" fill="white"/>
+                        <defs>
+                            <linearGradient id="gradient" x1="0" y1="0" x2="32" y2="32">
+                                <stop offset="0%" stop-color="#3B82F6"/>
+                                <stop offset="100%" stop-color="#8B5CF6"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                    <span>Toolry</span>
+                </a>
+                
+                <div class="nav-links">
+                    <a href="/static/index.html#tools" class="nav-link">Tools</a>
+                    <a href="/static/index.html#pricing" class="nav-link">Pricing</a>
+                </div>
+                
+                <div class="nav-actions">
+                    <div id="authButtons">
+                        <button class="btn btn-text" onclick="showLogin()">Sign In</button>
+                        <button class="btn btn-primary" onclick="showSignup()">Get Started</button>
+                    </div>
+                    <div id="userButtons" style="display: none;">
+                        <div class="user-menu">
+                            <span class="user-email" id="userEmail"></span>
+                            <span class="user-credits" id="userCredits">-- credits</span>
+                            <button class="btn btn-text" onclick="logout()">Sign Out</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="tool-workspace">
+        <div class="container container-narrow">
+            <h2 class="workspace-title" style="margin-bottom: var(--space-8);">Blur Sensitive Information</h2>
+            
+            <div class="message" id="messageBox" style="display: none;"></div>
+            
+            <!-- Upload Section -->
+            <div class="upload-section" id="uploadSection">
+                <div class="upload-area" id="uploadArea">
+                    <svg width="64" height="64" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+                    </svg>
+                    <h3>Drop image here</h3>
+                    <p>or click to browse (JPG, PNG, WebP)</p>
+                    <input type="file" id="fileInput" accept="image/jpeg,image/jpg,image/png,image/webp" hidden>
+                </div>
+                
+                <div class="format-options">
+                    <label>Blur Mode:</label>
+                    <div class="format-buttons">
+                        <button type="button" class="format-btn active" data-mode="auto">🤖 Auto-Detect Faces</button>
+                        <button type="button" class="format-btn" data-mode="manual">✏️ Manual Selection</button>
+                    </div>
+                </div>
+                
+                <div class="format-options">
+                    <label>Blur Strength:</label>
+                    <div class="format-buttons">
+                        <button type="button" class="format-btn" data-strength="low">Low</button>
+                        <button type="button" class="format-btn active" data-strength="medium">Medium</button>
+                        <button type="button" class="format-btn" data-strength="high">High</button>
+                    </div>
+                </div>
+                
+                <button class="btn btn-primary btn-large w-full" id="processBtn" disabled>
+                    Blur Image (1 credit)
+                </button>
+            </div>
+            
+            <!-- Preview Section (for manual mode) -->
+            <div id="manualSection" style="display: none;">
+                <div style="margin-bottom: var(--space-6);">
+                    <div style="background: var(--bg-secondary); padding: var(--space-4); border-radius: var(--radius-lg); margin-bottom: var(--space-4);">
+                        <p style="color: var(--text-primary); margin-bottom: var(--space-2);"><strong>Manual Mode:</strong></p>
+                        <p style="color: var(--text-secondary); font-size: var(--text-sm);">Click and drag on the image to draw rectangles over areas you want to blur (faces, text, sensitive info).</p>
+                    </div>
+                    
+                    <div style="position: relative; display: inline-block; max-width: 100%;">
+                        <canvas id="imageCanvas" style="max-width: 100%; border: 1px solid var(--border-color); border-radius: var(--radius-lg); cursor: crosshair;"></canvas>
+                    </div>
+                    
+                    <div style="margin-top: var(--space-4); display: flex; gap: var(--space-3);">
+                        <button class="btn btn-secondary" onclick="clearRegions()">Clear All Regions</button>
+                        <span id="regionCount" style="color: var(--text-secondary); line-height: 2.5;">0 regions selected</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Processing -->
+            <div class="processing-section" id="processingSection" style="display: none;">
+                <div class="loader"></div>
+                <h3>Processing...</h3>
+                <p id="processingMessage">Applying blur</p>
+            </div>
+            
+            <!-- Results -->
+            <div class="results-section" id="resultsSection" style="display: none;">
+                <div class="result-notice">
+                    <strong>✅ Blur Applied Successfully</strong>
+                    <p id="resultMessage"></p>
+                </div>
+                
+                <div class="result-actions">
+                    <button class="btn btn-primary btn-large" id="downloadBtn">
+                        💾 Download Blurred Image
+                    </button>
+                    <button class="btn btn-secondary btn-large" onclick="resetForm()">
+                        Blur Another Image
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        let selectedFile = null;
+        let selectedMode = 'auto';
+        let selectedStrength = 'medium';
+        let currentUser = null;
+        let downloadUrl = null;
+        let blurRegions = [];
+        let canvas, ctx, img;
+        let drawing = false;
+        let startX, startY, currentRect;
+
+        async function init() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/static/index.html';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/auth/me`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) throw new Error('Auth failed');
+
+                currentUser = await response.json();
+                document.getElementById('authButtons').style.display = 'none';
+                document.getElementById('userButtons').style.display = 'flex';
+                document.getElementById('userEmail').textContent = currentUser.email;
+                document.getElementById('userCredits').textContent = `${currentUser.credits_balance} credits`;
+
+            } catch (error) {
+                console.error('Init error:', error);
+                localStorage.removeItem('token');
+                window.location.href = '/static/index.html';
+            }
+        }
+
+        // File upload
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+
+        uploadArea.addEventListener('click', () => fileInput.click());
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = 'var(--brand-primary)';
+        });
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.style.borderColor = 'var(--border-color)';
+        });
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = 'var(--border-color)';
+            if (e.dataTransfer.files.length > 0) {
+                handleFile(e.dataTransfer.files[0]);
+            }
+        });
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            if (!file.type.startsWith('image/')) {
+                showMessage('Please select an image file', 'error');
+                return;
+            }
+            
+            selectedFile = file;
+            document.getElementById('processBtn').disabled = false;
+            
+            if (selectedMode === 'manual') {
+                loadImageToCanvas(file);
+                document.getElementById('manualSection').style.display = 'block';
+            }
+            
+            showMessage(`Selected: ${file.name}`, 'info');
+        }
+
+        function loadImageToCanvas(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                img = new Image();
+                img.onload = () => {
+                    canvas = document.getElementById('imageCanvas');
+                    ctx = canvas.getContext('2d');
+                    
+                    const maxWidth = 800;
+                    let scale = 1;
+                    if (img.width > maxWidth) {
+                        scale = maxWidth / img.width;
+                    }
+                    
+                    canvas.width = img.width * scale;
+                    canvas.height = img.height * scale;
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    
+                    blurRegions = [];
+                    setupCanvasDrawing();
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function setupCanvasDrawing() {
+            canvas.addEventListener('mousedown', startDrawing);
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mouseup', stopDrawing);
+            canvas.addEventListener('mouseleave', stopDrawing);
+        }
+
+        function startDrawing(e) {
+            const rect = canvas.getBoundingClientRect();
+            startX = e.clientX - rect.left;
+            startY = e.clientY - rect.top;
+            drawing = true;
+        }
+
+        function draw(e) {
+            if (!drawing) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const currentX = e.clientX - rect.left;
+            const currentY = e.clientY - rect.top;
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            
+            // Draw existing regions
+            ctx.strokeStyle = '#EF4444';
+            ctx.lineWidth = 3;
+            blurRegions.forEach(region => {
+                ctx.strokeRect(region.x, region.y, region.w, region.h);
+            });
+            
+            // Draw current rectangle
+            ctx.strokeStyle = '#3B82F6';
+            ctx.strokeRect(startX, startY, currentX - startX, currentY - startY);
+        }
+
+        function stopDrawing(e) {
+            if (!drawing) return;
+            drawing = false;
+            
+            const rect = canvas.getBoundingClientRect();
+            const endX = e.clientX - rect.left;
+            const endY = e.clientY - rect.top;
+            
+            const w = Math.abs(endX - startX);
+            const h = Math.abs(endY - startY);
+            
+            if (w > 10 && h > 10) {
+                const x = Math.min(startX, endX);
+                const y = Math.min(startY, endY);
+                
+                // Scale coordinates to original image size
+                const scale = img.width / canvas.width;
+                blurRegions.push({
+                    x: Math.round(x * scale),
+                    y: Math.round(y * scale),
+                    w: Math.round(w * scale),
+                    h: Math.round(h * scale)
+                });
+                
+                document.getElementById('regionCount').textContent = `${blurRegions.length} region(s) selected`;
+                
+                // Redraw with new region
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                ctx.strokeStyle = '#EF4444';
+                ctx.lineWidth = 3;
+                blurRegions.forEach(region => {
+                    const displayScale = 1 / scale;
+                    ctx.strokeRect(region.x * displayScale, region.y * displayScale, region.w * displayScale, region.h * displayScale);
+                });
+            }
+        }
+
+        function clearRegions() {
+            blurRegions = [];
+            if (canvas && img) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            }
+            document.getElementById('regionCount').textContent = '0 regions selected';
+        }
+
+        // Mode selection
+        document.querySelectorAll('.format-btn[data-mode]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.format-btn[data-mode]').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                selectedMode = btn.dataset.mode;
+                
+                if (selectedMode === 'manual' && selectedFile) {
+                    loadImageToCanvas(selectedFile);
+                    document.getElementById('manualSection').style.display = 'block';
+                } else {
+                    document.getElementById('manualSection').style.display = 'none';
+                }
+            });
+        });
+
+        // Strength selection
+        document.querySelectorAll('.format-btn[data-strength]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.format-btn[data-strength]').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                selectedStrength = btn.dataset.strength;
+            });
+        });
+
+        // Process
+        document.getElementById('processBtn').addEventListener('click', async () => {
+            if (!selectedFile) return;
+            
+            if (selectedMode === 'manual' && blurRegions.length === 0) {
+                showMessage('Please draw at least one region to blur', 'warning');
+                return;
+            }
+            
+            document.getElementById('uploadSection').style.display = 'none';
+            document.getElementById('manualSection').style.display = 'none';
+            document.getElementById('processingSection').style.display = 'block';
+            document.getElementById('processingMessage').textContent = `${selectedMode === 'auto' ? 'Detecting faces and' : 'Applying'} blur...`;
+            
+            try {
+                const formData = new FormData();
+                formData.append('file', selectedFile);
+                formData.append('mode', selectedMode);
+                formData.append('blur_strength', selectedStrength);
+                
+                if (selectedMode === 'manual') {
+                    formData.append('blur_regions', JSON.stringify(blurRegions));
+                }
+                
+                const response = await fetch(`${API_BASE}/api/blur/process`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.detail || 'Blur processing failed');
+                }
+
+                currentUser.credits_balance = data.credits_remaining;
+                document.getElementById('userCredits').textContent = `${currentUser.credits_balance} credits`;
+
+                downloadUrl = data.download_url;
+                
+                let msg = `Blur applied successfully (${selectedStrength} strength).`;
+                if (selectedMode === 'manual') {
+                    msg += ` ${blurRegions.length} region(s) blurred.`;
+                }
+                document.getElementById('resultMessage').textContent = msg;
+                
+                document.getElementById('processingSection').style.display = 'none';
+                document.getElementById('resultsSection').style.display = 'block';
+
+            } catch (error) {
+                console.error('Process error:', error);
+                showMessage(error.message, 'error');
+                document.getElementById('processingSection').style.display = 'none';
+                document.getElementById('uploadSection').style.display = 'block';
+                if (selectedMode === 'manual') {
+                    document.getElementById('manualSection').style.display = 'block';
+                }
+            }
+        });
+
+        document.getElementById('downloadBtn').addEventListener('click', () => {
+            if (downloadUrl) {
+                window.location.href = API_BASE + downloadUrl;
+            }
+        });
+
+        function resetForm() {
+            selectedFile = null;
+            fileInput.value = '';
+            blurRegions = [];
+            document.getElementById('processBtn').disabled = true;
+            document.getElementById('manualSection').style.display = 'none';
+            document.getElementById('regionCount').textContent = '0 regions selected';
+            downloadUrl = null;
+            document.getElementById('resultsSection').style.display = 'none';
+            document.getElementById('uploadSection').style.display = 'block';
+        }
+
+        function showMessage(msg, type) {
+            const box = document.getElementById('messageBox');
+            box.textContent = msg;
+            box.className = 'message ' + type;
+            box.style.display = 'block';
+            setTimeout(() => box.style.display = 'none', 5000);
+        }
+
+        function showLogin() {
+            document.getElementById('loginModal').classList.add('active');
+        }
+
+        function showSignup() {
+            document.getElementById('signupModal').classList.add('active');
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = '/static/index.html';
+        }
+
+        init();
+    </script>
+
+    <!-- Modals (same as other pages) -->
+    <div class="modal" id="loginModal">
+        <div class="modal-overlay" onclick="closeModal('loginModal')"></div>
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal('loginModal')">&times;</button>
+            <h2>Welcome Back</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" name="password" required>
+                </div>
+                <div id="loginError" class="error-message" style="display: none;"></div>
+                <button type="submit" class="btn btn-primary w-full">Sign In</button>
+            </form>
+            <p class="modal-footer">
+                Don't have an account? <a onclick="closeModal('loginModal'); showSignup();">Sign up</a>
+            </p>
+        </div>
+    </div>
+
+    <div class="modal" id="signupModal">
+        <div class="modal-overlay" onclick="closeModal('signupModal')"></div>
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal('signupModal')">&times;</button>
+            <h2>Get Started Free</h2>
+            <form id="signupForm">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" name="password" minlength="8" required>
+                </div>
+                <div class="form-group">
+                    <label>Full Name (optional)</label>
+                    <input type="text" name="full_name">
+                </div>
+                <div class="form-group" style="margin-top: var(--space-4);">
+                    <label style="display: flex; align-items: flex-start; gap: var(--space-2); cursor: pointer; font-size: var(--text-sm);">
+                        <input type="checkbox" name="terms_accepted" required style="margin-top: 2px; width: 18px; height: 18px; cursor: pointer;">
+                        <span style="color: var(--text-secondary);">I agree to the <a href="/static/terms.html" target="_blank" style="color: var(--brand-primary); text-decoration: underline;">Terms of Service</a> and <a href="/static/privacy.html" target="_blank" style="color: var(--brand-primary); text-decoration: underline;">Privacy Policy</a></span>
+                    </label>
+                </div>
+                <div id="signupError" class="error-message" style="display: none;"></div>
+                <button type="submit" class="btn btn-primary w-full">Create Account</button>
+            </form>
+            <p class="modal-footer">
+                Already have an account? <a onclick="closeModal('signupModal'); showLogin();">Sign in</a>
+            </p>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
